@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段五：列表查询进阶</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段五 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>列表查询进阶</h1>
+      <p>这一阶段学习后台列表页最常见的查询能力：筛选、搜索、排序、分页和统计。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、先准备几条练习数据</h2>
+      <article class="card">
+        <p>为了能看到筛选、排序和分页效果，可以先让 users 表里有多条不同的数据。</p>
+        <pre><code>-- 一次插入多条练习数据，方便后面测试排序、筛选和分页
+INSERT INTO users (username, age) VALUES
+  ('lisi', 22),
+  ('wangwu', 16),
+  ('zhaoliu', 30),
+  ('xiaoming', 22),
+  ('xiaohong', 19);</code></pre>
+        <details>
+          <summary>这段写法和以前有什么不同</summary>
+          <p>以前一次只插入一条数据；这里在一个 <code>VALUES</code> 后面写了多组值，因此可以一次插入多条记录。</p>
+        </details>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、ORDER BY 排序</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>升序 ASC</h3>
+          <p>从小到大排序。<code>ASC</code> 是默认顺序，可以省略。</p>
+          <pre><code>-- 按年龄升序排序：年龄小的排在前面
+SELECT id, username, age
+FROM users
+ORDER BY age ASC;</code></pre>
+        </article>
+        <article class="card">
+          <h3>降序 DESC</h3>
+          <p>从大到小排序。查询最新创建的数据时经常使用。</p>
+          <pre><code>-- 按年龄降序排序：年龄大的排在前面
+SELECT id, username, age
+FROM users
+ORDER BY age DESC;</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>Excel 类比：</strong><code>ORDER BY</code> 就像对某一列进行升序或降序排列。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、使用 AND 组合多个条件</h2>
+      <article class="card">
+        <p><code>AND</code> 表示多个条件必须同时满足。下面只查询年龄大于等于 18，并且小于等于 25 的用户。</p>
+        <pre><code>-- 查询年龄在 18 到 25 之间的用户
+SELECT id, username, age
+FROM users
+WHERE age &gt;= 18
+  AND age &lt;= 25;</code></pre>
+      </article>
+      <div class="grid" style="margin-top: 16px;">
+        <article class="card">
+          <h3>AND：同时满足</h3>
+          <p>条件 A 和条件 B 都成立，记录才会被查询出来。</p>
+        </article>
+        <article class="card">
+          <h3>OR：满足一个即可</h3>
+          <p>条件 A 或条件 B 任意一个成立，记录就会被查询出来。</p>
+          <pre><code>-- 查询年龄等于 18 或者等于 22 的用户
+SELECT id, username, age
+FROM users
+WHERE age = 18 OR age = 22;</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>注意：</strong>同时使用 <code>AND</code> 和 <code>OR</code> 时，建议使用括号明确组合关系，避免条件和你想的不一样。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、LIKE 模糊搜索</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>条件</th><th>含义</th><th>可能匹配</th></tr></thead>
+          <tbody>
+            <tr><td><code>LIKE 'xiao%'</code></td><td>以 xiao 开头</td><td>xiaoming、xiaohong</td></tr>
+            <tr><td><code>LIKE '%ming'</code></td><td>以 ming 结尾</td><td>xiaoming</td></tr>
+            <tr><td><code>LIKE '%xiao%'</code></td><td>任意位置包含 xiao</td><td>xiaoming、xiaohong</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <article class="card" style="margin-top: 16px;">
+        <p>后台列表中的搜索框，常常会对应一个模糊查询条件。</p>
+        <pre><code>-- 模糊搜索：查询用户名中包含 xiao 的用户
+SELECT id, username, age
+FROM users
+WHERE username LIKE '%xiao%';</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、LIMIT 分页查询</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>只查询前 3 条</h3>
+          <pre><code>-- 分页第一页：按照 id 升序，只查询前 3 条
+SELECT id, username, age
+FROM users
+ORDER BY id ASC
+LIMIT 3;</code></pre>
+        </article>
+        <article class="card">
+          <h3>跳过 3 条，再查询 3 条</h3>
+          <pre><code>-- 分页第二页：跳过前 3 条，再查询 3 条
+SELECT id, username, age
+FROM users
+ORDER BY id ASC
+LIMIT 3 OFFSET 3;</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>前端分页类比：</strong>第一页查询前 3 条；第二页先跳过前 3 条，再查询接下来的 3 条。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、COUNT 统计总数</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>统计所有用户数量</h3>
+          <pre><code>-- 统计 users 表中一共有多少条用户记录
+SELECT COUNT(*) AS total
+FROM users;</code></pre>
+        </article>
+        <article class="card">
+          <h3>统计成年用户数量</h3>
+          <pre><code>-- 统计年龄大于等于 18 的用户数量
+SELECT COUNT(*) AS adult_total
+FROM users
+WHERE age &gt;= 18;</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>AS 是什么：</strong><code>AS total</code> 是给查询结果起一个更容易理解的名字。前端分页组件显示的总条数，通常来自 <code>COUNT</code>。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">七、GROUP BY 分组统计</h2>
+      <article class="card">
+        <p>下面会按照年龄分组，然后统计每个年龄分别有多少用户。</p>
+        <pre><code>-- 按年龄分组，统计每个年龄分别有多少用户
+SELECT age, COUNT(*) AS user_total
+FROM users
+GROUP BY age
+ORDER BY age ASC;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>Excel 类比：</strong><code>GROUP BY</code> 很像数据透视表，先按某一列分组，再对每组做统计。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">八、把列表查询组合起来</h2>
+      <article class="card">
+        <p>下面模拟一个用户列表接口：搜索用户名中包含 xiao 的成年用户，按创建时间倒序，只返回前 10 条。</p>
+        <pre><code>-- 模拟后台用户列表查询：搜索、筛选、排序、限制返回条数
+SELECT id, username, age, created_at
+FROM users
+WHERE username LIKE '%xiao%'
+  AND age &gt;= 18
+ORDER BY created_at DESC
+LIMIT 10;</code></pre>
+        <details open>
+          <summary>按顺序理解</summary>
+          <p><code>SELECT</code>：决定返回哪些字段。</p>
+          <p><code>FROM</code>：决定从哪张表查询。</p>
+          <p><code>WHERE</code>：筛选符合条件的记录。</p>
+          <p><code>ORDER BY</code>：给筛选结果排序。</p>
+          <p><code>LIMIT</code>：限制最终返回多少条。</p>
+        </details>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">九、本阶段练习</h2>
+      <div class="practice">
+        <div class="practice-item">查询所有用户，并按照年龄从大到小排序。</div>
+        <div class="practice-item">查询年龄在 18 到 25 之间的用户。</div>
+        <div class="practice-item">搜索用户名中包含 xiao 的用户。</div>
+        <div class="practice-item">每页显示 3 条数据，分别查询第一页和第二页。</div>
+        <div class="practice-item">统计用户总数，以及成年用户数量。</div>
+        <div class="practice-item">按照年龄分组，统计每个年龄有多少用户。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="note">
+        <strong>下一步：</strong>掌握本阶段后，继续学习表关系和 <code>JOIN</code> 联表查询，例如把用户表和文章表关联起来。
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+      <a class="nav-link" href="04-fullstack.html">上一阶段</a>
+      <a class="nav-link" href="06-join-relations.html">下一阶段</a>
+    </nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

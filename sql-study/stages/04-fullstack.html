@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段四：全栈开发思维</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段四 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>全栈开发思维</h1>
+      <p>把你熟悉的前端页面动作，映射到后端接口、数据库表和 SQL 操作上。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、前端页面和数据库的对应关系</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>前端视角</th><th>数据库视角</th><th>例子</th></tr></thead>
+          <tbody>
+            <tr><td>用户列表</td><td>数据库里需要用户表</td><td><code>users</code></td></tr>
+            <tr><td>展示用户名、年龄和时间</td><td>表中需要对应字段</td><td><code>username</code>、<code>age</code>、<code>created_at</code></td></tr>
+            <tr><td>打开用户详情</td><td>通过唯一 id 查询一行</td><td><code>WHERE id = 1</code></td></tr>
+            <tr><td>编辑用户</td><td>修改指定记录</td><td><code>UPDATE</code> 配合 <code>WHERE</code></td></tr>
+            <tr><td>删除用户</td><td>删除指定记录</td><td><code>DELETE</code> 配合 <code>WHERE</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、阶段练习目标</h2>
+      <div class="practice">
+        <div class="practice-item">能说清楚数据库、表、字段、记录分别是什么。</div>
+        <div class="practice-item">能看懂简单用户表中每个字段的类型和约束。</div>
+        <div class="practice-item">能解释为什么 id 通常要作为主键，以及不写 id 会发生什么。</div>
+        <div class="practice-item">能说出 INSERT、SELECT、UPDATE、DELETE 分别对应什么操作。</div>
+        <div class="practice-item">知道 WHERE 在查询、修改和删除中的作用。</div>
+        <div class="practice-item">知道修改和删除前为什么应该先查询确认。</div>
+      </div>
+    </section>
+
+    <section class="section"><div class="note"><strong>下一阶段：</strong>继续学习排序、分页、多条件筛选和统计，掌握后台列表页常见查询能力。</div></section>
+    <nav class="chapter-nav"><a class="nav-link" href="03-data-operations.html">上一阶段</a><a class="nav-link" href="05-list-queries.html">下一阶段</a></nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

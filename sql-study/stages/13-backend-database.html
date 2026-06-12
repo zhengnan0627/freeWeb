@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段十三：后端如何使用数据库</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段十三 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>后端如何使用数据库</h1>
+      <p>前面学的是数据库本身。这一阶段开始把数据库接到后端：后端负责接收请求、执行 SQL、处理结果，再把安全且必要的数据返回给前端。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、为什么前端不直接连数据库</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>数据库账号不能暴露</h3>
+          <p>如果前端直接连数据库，数据库地址、账号、密码都会暴露给用户，这是非常危险的。</p>
+        </article>
+        <article class="card">
+          <h3>业务规则需要后端兜住</h3>
+          <p>权限判断、参数校验、事务、日志、敏感字段过滤，这些都应该在后端处理。</p>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>记住：</strong>前端调用后端接口，后端再访问数据库。前端不应该直接操作数据库。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、一次接口请求大概怎么流动</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>顺序</th><th>位置</th><th>做什么</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>前端</td><td>发起请求，比如获取用户列表。</td></tr>
+            <tr><td>2</td><td>后端路由</td><td>接收请求，解析参数。</td></tr>
+            <tr><td>3</td><td>业务层</td><td>检查权限、处理默认值、决定查什么数据。</td></tr>
+            <tr><td>4</td><td>数据库层</td><td>执行 SQL 或 ORM 查询。</td></tr>
+            <tr><td>5</td><td>返回层</td><td>过滤敏感字段，整理成前端需要的数据结构。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、后端连接数据库通常用连接池</h2>
+      <article class="card">
+        <p>连接池可以复用数据库连接，避免每次请求都重新连接数据库。下面是 Node.js 中常见的思路示例。</p>
+        <pre><code>/**
+ * 创建 MySQL 连接池。
+ * 实际项目中，账号密码应该放在环境变量里，不要写死在代码中。
+ */
+const pool = mysql.createPool({
+  host: "127.0.0.1",
+  port: 3306,
+  user: "root",
+  password: "你的数据库密码",
+  database: "fullstack_study",
+  waitForConnections: true,
+  connectionLimit: 10
+});</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>先理解概念：</strong>连接池就像后端提前准备好一组数据库连接，请求来了就借一个，用完再还回去。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、后端查询用户列表</h2>
+      <article class="card">
+        <p>后端不应该无脑 <code>SELECT *</code>。列表接口只查前端需要展示的字段。</p>
+        <pre><code>-- 用户列表接口只查询必要字段
+SELECT id, username, age, created_at
+FROM users
+ORDER BY created_at DESC
+LIMIT 10;</code></pre>
+      </article>
+      <article class="card">
+        <p>在 Node.js 里，执行查询通常会得到 rows，也就是数据库返回的行数据。</p>
+        <pre><code>/**
+ * 查询用户列表。
+ * 这里只返回列表页需要展示的字段。
+ */
+async function listUsers() {
+  const [rows] = await pool.query(`
+    SELECT id, username, age, created_at
+    FROM users
+    ORDER BY created_at DESC
+    LIMIT 10
+  `);
+
+  return rows;
+}</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、参数化查询：不要拼接用户输入</h2>
+      <article class="card">
+        <p>用户输入不能直接拼进 SQL 字符串，否则可能产生 SQL 注入风险。</p>
+        <pre><code>/**
+ * 不推荐：把用户输入直接拼进 SQL，存在 SQL 注入风险。
+ */
+async function unsafeFindUser(username) {
+  const sql = `SELECT id, username FROM users WHERE username = '${username}'`;
+  const [rows] = await pool.query(sql);
+
+  return rows;
+}</code></pre>
+      </article>
+      <article class="card">
+        <p>更安全的写法是参数化查询。<code>?</code> 是占位符，具体值通过数组传入。</p>
+        <pre><code>/**
+ * 推荐：使用参数化查询，让数据库驱动处理用户输入。
+ */
+async function findUserByUsername(username) {
+  const [rows] = await pool.query(
+    "SELECT id, username FROM users WHERE username = ?",
+    [username]
+  );
+
+  return rows;
+}</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、分页接口怎么对应 SQL</h2>
+      <article class="card">
+        <p>前端常传 <code>page</code> 和 <code>pageSize</code>，后端把它们换算成 <code>LIMIT</code> 和 <code>OFFSET</code>。</p>
+        <pre><code>/**
+ * 分页查询用户列表。
+ * page 从 1 开始，offset 表示跳过多少条。
+ */
+async function listUsersByPage(page, pageSize) {
+  const safePage = Math.max(Number(page) || 1, 1);
+  const safePageSize = Math.min(Math.max(Number(pageSize) || 10, 1), 100);
+  const offset = (safePage - 1) * safePageSize;
+
+  const [rows] = await pool.query(
+    `
+      SELECT id, username, age, created_at
+      FROM users
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `,
+    [safePageSize, offset]
+  );
+
+  return rows;
+}</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">七、总数和列表通常分开查</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>查列表</h3>
+          <pre><code>-- 查询当前页用户列表
+SELECT id, username, age, created_at
+FROM users
+ORDER BY created_at DESC
+LIMIT 10 OFFSET 0;</code></pre>
+        </article>
+        <article class="card">
+          <h3>查总数</h3>
+          <pre><code>-- 查询用户总数，用于前端分页组件
+SELECT COUNT(*) AS total
+FROM users;</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>前端视角：</strong>表格组件通常需要两部分数据：当前页列表和总条数。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">八、不要把数据库字段原样全返回</h2>
+      <article class="card">
+        <p>数据库表里可能有密码、内部备注、删除标记、权限标识等字段。后端应该明确选择返回哪些字段。</p>
+        <pre><code>/**
+ * 返回给前端前，整理成明确的数据结构。
+ * 这样即使数据库新增敏感字段，也不会自动暴露给前端。
+ */
+function toUserListItem(row) {
+  return {
+    id: row.id,
+    username: row.username,
+    age: row.age,
+    createdAt: row.created_at
+  };
+}</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>真实项目：</strong>接口返回字段是后端的契约，不应该等于数据库表的全部字段。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">九、后端事务写法</h2>
+      <article class="card">
+        <p>后端里事务一般会拿到一个专用连接，在这个连接上执行多条 SQL，成功就提交，失败就回滚。</p>
+        <pre><code>/**
+ * 使用事务完成转账。
+ * 两个 UPDATE 必须一起成功，否则就回滚。
+ */
+async function transfer(fromId, toId, amount) {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    await connection.query(
+      "UPDATE transaction_accounts SET balance = balance - ? WHERE id = ?",
+      [amount, fromId]
+    );
+
+    await connection.query(
+      "UPDATE transaction_accounts SET balance = balance + ? WHERE id = ?",
+      [amount, toId]
+    );
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十、ORM 是什么</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>ORM 帮你生成 SQL</h3>
+          <p>比如 Prisma、TypeORM 这类工具，可以让你用对象和方法操作数据库，而不是每次手写 SQL。</p>
+        </article>
+        <article class="card">
+          <h3>但不能只会 ORM</h3>
+          <p>ORM 最终还是会生成 SQL。你理解 SQL，才能看懂慢查询、联表、索引和事务问题。</p>
+        </article>
+      </div>
+      <div class="table-wrap" style="margin-top: 16px;">
+        <table>
+          <thead><tr><th>SQL 思维</th><th>ORM 里对应什么</th></tr></thead>
+          <tbody>
+            <tr><td><code>SELECT</code></td><td>查询方法，例如 findMany、findFirst。</td></tr>
+            <tr><td><code>WHERE</code></td><td>查询条件对象。</td></tr>
+            <tr><td><code>JOIN</code></td><td>关系查询、include、relations。</td></tr>
+            <tr><td><code>TRANSACTION</code></td><td>ORM 提供的事务 API。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十一、迁移 Migration 是什么</h2>
+      <article class="card">
+        <p>迁移就是把数据库结构变化记录成版本。比如新增 users 表、给 users 表加 email 字段，都应该留下可追踪记录。</p>
+        <pre><code>-- 迁移文件里常见的内容：给用户表新增邮箱字段
+ALTER TABLE users
+ADD COLUMN email VARCHAR(100);</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>团队项目：</strong>不要只在 Navicat 里手动改表。真实项目通常要通过迁移文件管理数据库结构变化。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十二、本阶段练习</h2>
+      <div class="practice">
+        <div class="practice-item">能说出前端为什么不应该直接连接数据库。</div>
+        <div class="practice-item">能理解一次接口请求从前端到数据库再返回的流程。</div>
+        <div class="practice-item">能解释连接池是为了复用数据库连接。</div>
+        <div class="practice-item">能使用参数化查询理解为什么不要拼接用户输入。</div>
+        <div class="practice-item">能说出列表接口为什么通常要查列表和总数。</div>
+        <div class="practice-item">能理解后端事务里的提交、回滚和释放连接。</div>
+        <div class="practice-item">能说出 ORM 不是替代 SQL，而是封装 SQL。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="note">
+        <strong>下一步：</strong>到这里数据库基础已经能支撑你进入全栈实践了。后面适合做一个 Node.js 接口项目，把用户列表、分页、角色、事务这些内容串起来。
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+      <a class="nav-link" href="12-locks-concurrency.html">上一阶段</a>
+      <a class="nav-link" href="../index.html">返回目录</a>
+    </nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

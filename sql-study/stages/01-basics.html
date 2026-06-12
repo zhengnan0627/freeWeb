@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段一：数据库基础概念</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段一 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>数据库基础概念</h1>
+      <p>这一阶段先不追求写很多 SQL，重点是把数据库、表、字段和记录的关系想明白。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、先建立整体感觉</h2>
+      <div class="flow">
+        <div class="flow-item"><span class="flow-index">1</span><strong>创建数据库</strong><span>给项目准备一个独立的数据空间。</span></div>
+        <div class="flow-item"><span class="flow-index">2</span><strong>选择数据库</strong><span>告诉 MySQL 接下来操作哪个数据空间。</span></div>
+        <div class="flow-item"><span class="flow-index">3</span><strong>创建数据表</strong><span>定义数据按照什么结构存放。</span></div>
+        <div class="flow-item"><span class="flow-index">4</span><strong>插入数据</strong><span>往表里新增一行真实记录。</span></div>
+        <div class="flow-item"><span class="flow-index">5</span><strong>查询数据</strong><span>把记录取出来给人或程序使用。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、用 Excel 理解数据库</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Excel</th><th>数据库</th><th>怎么理解</th></tr></thead>
+          <tbody>
+            <tr><td>Excel 文件</td><td>数据库</td><td>存放一个项目相关的数据。</td></tr>
+            <tr><td>Sheet 工作表</td><td>数据表 Table</td><td>每张表通常只存一类数据。</td></tr>
+            <tr><td>表头</td><td>字段 Column</td><td>例如用户名、年龄、创建时间。</td></tr>
+            <tr><td>一行数据</td><td>记录 Row</td><td>用户表里的一行代表一个用户。</td></tr>
+            <tr><td>单元格</td><td>字段值</td><td>某一条记录的具体属性值。</td></tr>
+            <tr><td>筛选、排序</td><td><code>WHERE</code>、<code>ORDER BY</code></td><td>数据库通过 SQL 写筛选和排序规则。</td></tr>
+            <tr><td>数据验证</td><td>类型和约束</td><td>限制只能填数字、不能为空或不能重复。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section grid">
+      <article class="card"><h3>可以这样类比</h3><p>每张表有固定列名，每列有明确类型，程序可以稳定地读写数据。</p></article>
+      <article class="card"><h3>不能完全等同</h3><p>数据库支持并发、权限、事务、索引和高效查询，真实系统通常不会直接拿 Excel 当数据库。</p></article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、数据库、表、字段和记录</h2>
+      <div class="grid">
+        <article class="card"><h3>数据库</h3><p>一个项目的数据容器，例如 <code>fullstack_study</code>。</p><span class="tag">项目级</span><span class="tag">容器</span></article>
+        <article class="card"><h3>数据表</h3><p>存放某一类数据，例如 <code>users</code> 存用户，<code>articles</code> 存文章。</p><span class="tag">业务对象</span></article>
+        <article class="card"><h3>字段</h3><p>表里的列，例如 <code>username</code>、<code>age</code>。</p><span class="tag">列</span><span class="tag">属性</span></article>
+        <article class="card"><h3>记录</h3><p>表里的一行数据。用户表中的一行通常代表一个用户。</p><span class="tag">行</span><span class="tag">真实数据</span></article>
+      </div>
+    </section>
+
+    <section class="section"><div class="note"><strong>阶段目标：</strong>你能说清楚数据库、表、字段、记录分别是什么，就可以进入下一阶段。</div></section>
+    <nav class="chapter-nav"><a class="nav-link" href="02-table-structure.html">下一阶段：表结构和建表语句</a></nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

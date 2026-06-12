@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQL 学习目录</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>SQL 学习目录</h1>
+      <p>按阶段学习：先建立概念，再理解表结构、练习数据操作，最后逐步掌握真实全栈项目中的查询能力。</p>
+    </section>
+
+    <section class="section chapter-grid">
+      <a class="chapter-link" href="stages/01-basics.html">
+        <span class="chapter-number">阶段一</span>
+        <h3>数据库基础概念</h3>
+        <p>用 Excel 类比理解数据库、表、字段、记录，以及建库到查询的整体流程。</p>
+      </a>
+      <a class="chapter-link" href="stages/02-table-structure.html">
+        <span class="chapter-number">阶段二</span>
+        <h3>表结构和建表语句</h3>
+        <p>理解 users 表、字段类型、主键、自增、默认值和 SQL 关键字顺序。</p>
+      </a>
+      <a class="chapter-link" href="stages/03-data-operations.html">
+        <span class="chapter-number">阶段三</span>
+        <h3>数据增删改查</h3>
+        <p>学习 INSERT、SELECT、WHERE、UPDATE、DELETE，以及 WHERE 的安全边界。</p>
+      </a>
+      <a class="chapter-link" href="stages/04-fullstack.html">
+        <span class="chapter-number">阶段四</span>
+        <h3>全栈开发思维</h3>
+        <p>把前端页面中的列表、详情、编辑、删除，对应到数据库表和 SQL 操作。</p>
+      </a>
+      <a class="chapter-link" href="stages/05-list-queries.html">
+        <span class="chapter-number">阶段五</span>
+        <h3>列表查询进阶</h3>
+        <p>学习排序、多条件筛选、模糊搜索、分页、总数统计和分组统计。</p>
+      </a>
+      <a class="chapter-link" href="stages/06-join-relations.html">
+        <span class="chapter-number">阶段六</span>
+        <h3>表关系和 JOIN 联表</h3>
+        <p>理解一对多关系、外键字段，以及如何把用户表和文章表一起查询。</p>
+      </a>
+      <a class="chapter-link" href="stages/07-many-to-many.html">
+        <span class="chapter-number">阶段七</span>
+        <h3>多对多关系和关联表</h3>
+        <p>用用户、角色、用户角色关联表，理解真实权限系统里的多对多关系。</p>
+      </a>
+      <a class="chapter-link" href="stages/08-sql-execution-order.html">
+        <span class="chapter-number">阶段八</span>
+        <h3>SQL 书写顺序和逻辑处理顺序</h3>
+        <p>理解 SQL 为什么不是从 SELECT 开始处理，以及各个关键字真正的解析顺序。</p>
+      </a>
+      <a class="chapter-link" href="stages/09-constraints.html">
+        <span class="chapter-number">阶段九</span>
+        <h3>约束和数据可靠性</h3>
+        <p>学习 NOT NULL、UNIQUE、DEFAULT、CHECK、FOREIGN KEY，让数据库帮你拦住脏数据。</p>
+      </a>
+      <a class="chapter-link" href="stages/10-indexes.html">
+        <span class="chapter-number">阶段十</span>
+        <h3>索引和查询性能</h3>
+        <p>理解索引为什么能加速查询、什么时候该建索引，以及索引为什么不是越多越好。</p>
+      </a>
+      <a class="chapter-link" href="stages/11-transactions.html">
+        <span class="chapter-number">阶段十一</span>
+        <h3>事务和数据一致性</h3>
+        <p>学习 START TRANSACTION、COMMIT、ROLLBACK，理解转账和下单为什么需要事务。</p>
+      </a>
+      <a class="chapter-link" href="stages/12-locks-concurrency.html">
+        <span class="chapter-number">阶段十二</span>
+        <h3>锁和并发控制</h3>
+        <p>理解多人同时修改同一份数据为什么会出错，以及数据库如何用锁保护余额、库存这类关键数据。</p>
+      </a>
+      <a class="chapter-link" href="stages/13-backend-database.html">
+        <span class="chapter-number">阶段十三</span>
+        <h3>后端如何使用数据库</h3>
+        <p>理解 Node.js 后端如何连接 MySQL、执行参数化查询、返回安全字段，并在代码里使用事务。</p>
+      </a>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

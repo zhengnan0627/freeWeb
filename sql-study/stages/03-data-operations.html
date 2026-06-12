@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段三：数据增删改查</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段三 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>数据增删改查</h1>
+      <p>这一阶段开始进入真实操作：新增、查询、条件筛选、修改和删除。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、插入和查询</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>插入数据</h3>
+          <p>先写要填哪些字段，再按相同顺序写对应的值。</p>
+          <pre><code>-- 往 users 表新增一条用户数据
+INSERT INTO users (username, age)
+VALUES ('zhangsan', 18);</code></pre>
+          <details><summary>为什么没有写 id 和 created_at</summary><p>id 会自动递增；created_at 有默认当前时间。</p></details>
+        </article>
+        <article class="card">
+          <h3>查询数据</h3>
+          <p><code>SELECT</code> 表示要取哪些字段，<code>FROM</code> 表示从哪张表取。</p>
+          <pre><code>-- 查询 users 表中的指定字段
+SELECT id, username, age, created_at
+FROM users;</code></pre>
+          <details><summary>为什么不总是使用 SELECT *</summary><p>明确字段更稳定，也可以减少不必要的数据返回。</p></details>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、CRUD 是什么</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>简称</th><th>英文</th><th>SQL</th><th>页面中的操作</th></tr></thead>
+          <tbody>
+            <tr><td>C</td><td>Create</td><td><code>INSERT</code></td><td>新增用户、文章或订单。</td></tr>
+            <tr><td>R</td><td>Read</td><td><code>SELECT</code></td><td>列表、详情、搜索和筛选。</td></tr>
+            <tr><td>U</td><td>Update</td><td><code>UPDATE</code></td><td>编辑资料、修改状态。</td></tr>
+            <tr><td>D</td><td>Delete</td><td><code>DELETE</code></td><td>删除或移除记录。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、WHERE 条件查询</h2>
+      <div class="grid">
+        <article class="card"><h3>按年龄筛选</h3><pre><code>-- 查询年龄大于等于 18 的用户
+SELECT id, username, age, created_at
+FROM users
+WHERE age &gt;= 18;</code></pre></article>
+        <article class="card"><h3>按 id 查详情</h3><pre><code>-- 查询 id 等于 1 的用户
+SELECT id, username, age, created_at
+FROM users
+WHERE id = 1;</code></pre></article>
+        <article class="card"><h3>按用户名精确查询</h3><pre><code>-- 查询用户名等于 zhangsan 的用户
+SELECT id, username, age, created_at
+FROM users
+WHERE username = 'zhangsan';</code></pre></article>
+        <article class="card"><h3>模糊搜索</h3><p><code>%</code> 表示前后可以有任意内容。</p><pre><code>-- 查询用户名中包含 zhang 的用户
+SELECT id, username, age, created_at
+FROM users
+WHERE username LIKE '%zhang%';</code></pre></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、WHERE 在 SELECT、UPDATE、DELETE 里的作用</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>语句</th>
+              <th>WHERE 的作用</th>
+              <th>不写 WHERE 的结果</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>SELECT</code></td>
+              <td>筛选要查询哪些数据。</td>
+              <td>查询整张表的所有记录。</td>
+            </tr>
+            <tr>
+              <td><code>UPDATE</code></td>
+              <td>限定要修改哪几行数据。</td>
+              <td>可能修改整张表的所有记录。</td>
+            </tr>
+            <tr>
+              <td><code>DELETE</code></td>
+              <td>限定要删除哪几行数据。</td>
+              <td>可能删除整张表的所有记录。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid" style="margin-top: 16px;">
+        <article class="card">
+          <h3>SELECT 里的 WHERE</h3>
+          <p>
+            查询时，<code>WHERE</code> 像 Excel 的筛选按钮。它决定“返回哪些行”，不会改变表里的数据。
+          </p>
+          <pre><code>-- SELECT 中的 WHERE 只负责筛选查询结果
+SELECT id, username, age
+FROM users
+WHERE age &gt;= 18;</code></pre>
+        </article>
+        <article class="card">
+          <h3>UPDATE 里的 WHERE</h3>
+          <p>
+            修改时，<code>WHERE</code> 决定“修改哪些行”。如果条件写错，可能会改错用户。
+          </p>
+          <pre><code>-- UPDATE 中的 WHERE 决定修改哪一行
+UPDATE users
+SET age = 20
+WHERE id = 1;</code></pre>
+        </article>
+        <article class="card">
+          <h3>DELETE 里的 WHERE</h3>
+          <p>
+            删除时，<code>WHERE</code> 决定“删除哪些行”。新手阶段执行删除前，建议先用同样条件查一遍。
+          </p>
+          <pre><code>-- 删除前先查一下，确认这就是要删除的数据
+SELECT id, username, age
+FROM users
+WHERE id = 1;
+
+-- 确认无误后，再删除 id 等于 1 的用户
+DELETE FROM users
+WHERE id = 1;</code></pre>
+        </article>
+        <article class="card">
+          <h3>最常见的安全习惯</h3>
+          <p>
+            先写 <code>SELECT</code> 确认命中的数据，再把同一个 <code>WHERE</code> 条件用于 <code>UPDATE</code> 或 <code>DELETE</code>。
+          </p>
+          <pre><code>-- 先用 SELECT 确认 WHERE 条件命中了哪些数据
+SELECT id, username, age
+FROM users
+WHERE id = 1;</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>记住：</strong>
+        <code>SELECT</code> 不写 <code>WHERE</code> 通常只是查得多；<code>UPDATE</code> 和 <code>DELETE</code>
+        不写 <code>WHERE</code> 就可能直接影响整张表。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、UPDATE 修改数据</h2>
+      <div class="grid">
+        <article class="card"><h3>修改一个字段</h3><pre><code>-- 把 id 等于 1 的用户年龄改成 20
+UPDATE users
+SET age = 20
+WHERE id = 1;</code></pre></article>
+        <article class="card"><h3>修改多个字段</h3><pre><code>-- 同时修改 id 等于 1 的用户名称和年龄
+UPDATE users
+SET username = 'lisi',
+    age = 22
+WHERE id = 1;</code></pre></article>
+      </div>
+      <div class="note" style="margin-top: 16px;"><strong>重要：</strong>如果 UPDATE 忘记写 WHERE，可能会把整张表的所有记录都修改掉。</div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、DELETE 删除数据</h2>
+      <div class="grid">
+        <article class="card"><h3>先查询确认</h3><pre><code>-- 删除前先查询确认
+SELECT id, username, age, created_at
+FROM users
+WHERE id = 1;</code></pre></article>
+        <article class="card"><h3>删除指定记录</h3><pre><code>-- 删除 id 等于 1 的用户
+DELETE FROM users
+WHERE id = 1;</code></pre></article>
+      </div>
+      <div class="note" style="margin-top: 16px;"><strong>重要：</strong>如果 DELETE 忘记写 WHERE，可能会删除整张表中的所有数据。</div>
+    </section>
+
+    <section class="section"><div class="note"><strong>阶段目标：</strong>能说出 INSERT、SELECT、UPDATE、DELETE 分别做什么，并知道 WHERE 是修改和删除的安全边界。</div></section>
+    <nav class="chapter-nav"><a class="nav-link" href="02-table-structure.html">上一阶段</a><a class="nav-link" href="04-fullstack.html">下一阶段</a></nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段十一：事务和数据一致性</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段十一 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>事务和数据一致性</h1>
+      <p>事务用来保护一组相关操作：要么全部成功，要么全部失败。它是转账、下单、扣库存这类业务的安全底线。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、为什么需要事务</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>转账场景</h3>
+          <p>A 给 B 转 100 元，必须同时完成：A 扣 100，B 加 100。只成功一半，账就错了。</p>
+        </article>
+        <article class="card">
+          <h3>下单场景</h3>
+          <p>创建订单、创建订单明细、扣库存通常要绑定在一起。订单创建了但库存没扣，也会出问题。</p>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>一句话：</strong>当一个业务动作需要多条 SQL 一起完成时，就要考虑事务。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、事务的三个核心命令</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>命令</th><th>作用</th><th>怎么理解</th></tr></thead>
+          <tbody>
+            <tr><td><code>START TRANSACTION</code></td><td>开始事务</td><td>从这里开始，后面的操作先放在一个事务里。</td></tr>
+            <tr><td><code>COMMIT</code></td><td>提交事务</td><td>确认所有操作都成功，把修改真正保存。</td></tr>
+            <tr><td><code>ROLLBACK</code></td><td>回滚事务</td><td>出现问题时撤销本次事务中的修改。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、准备账户练习表</h2>
+      <article class="card">
+        <p>为了不影响前面的练习表，这里新建 <code>transaction_accounts</code> 表。</p>
+        <pre><code>-- 创建一张专门练习事务的账户表
+CREATE TABLE IF NOT EXISTS transaction_accounts (
+  -- 账户 id
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- 账户名称
+  account_name VARCHAR(50) NOT NULL,
+  -- 账户余额，不能小于 0
+  balance DECIMAL(10, 2) NOT NULL CHECK (balance &gt;= 0),
+  -- 创建时间
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、准备账户数据</h2>
+      <article class="card">
+        <p>准备两个账户：A 账户有 1000 元，B 账户有 500 元。</p>
+        <pre><code>-- 插入两条账户数据
+INSERT INTO transaction_accounts (account_name, balance) VALUES
+  ('A 账户', 1000.00),
+  ('B 账户', 500.00);</code></pre>
+      </article>
+      <article class="card">
+        <p>先查看账户余额，确认初始数据。</p>
+        <pre><code>-- 查看账户余额
+SELECT id, account_name, balance
+FROM transaction_accounts;</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、没有事务时的问题</h2>
+      <article class="card">
+        <p>下面两条 SQL 表示：A 账户扣 100，B 账户加 100。如果第一条成功，第二条失败，钱就不一致了。</p>
+        <pre><code>-- 没有事务保护：如果中间失败，可能只成功一半
+UPDATE transaction_accounts
+SET balance = balance - 100
+WHERE id = 1;
+
+UPDATE transaction_accounts
+SET balance = balance + 100
+WHERE id = 2;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>学习重点：</strong>不是这两条 SQL 本身复杂，而是它们必须作为一个整体成功或失败。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、用事务完成转账</h2>
+      <article class="card">
+        <p>事务会把两次余额修改包起来。都成功就提交；如果发现问题，就回滚。</p>
+        <pre><code>-- 开始事务：从这里开始把多条 SQL 当成一个整体
+START TRANSACTION;
+
+-- A 账户扣 100
+UPDATE transaction_accounts
+SET balance = balance - 100
+WHERE id = 1;
+
+-- B 账户加 100
+UPDATE transaction_accounts
+SET balance = balance + 100
+WHERE id = 2;
+
+-- 确认两步都没问题后，提交事务
+COMMIT;</code></pre>
+      </article>
+      <article class="card">
+        <p>提交后再查询余额，确认转账结果。</p>
+        <pre><code>-- 查看事务提交后的账户余额
+SELECT id, account_name, balance
+FROM transaction_accounts;</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">七、用 ROLLBACK 撤销事务</h2>
+      <article class="card">
+        <p>下面这段适合单独复制执行。执行到查询时，你能看到事务内的临时变化；执行 <code>ROLLBACK</code> 后，本次修改会撤销。</p>
+        <pre><code>-- 开始事务，准备演示回滚
+START TRANSACTION;
+
+-- 先让 A 账户扣 200
+UPDATE transaction_accounts
+SET balance = balance - 200
+WHERE id = 1;
+
+-- 在事务中查看余额，可能能看到临时变化
+SELECT id, account_name, balance
+FROM transaction_accounts;
+
+-- 回滚事务：撤销 START TRANSACTION 之后的修改
+ROLLBACK;
+
+-- 再次查看余额，确认刚才的扣款已经撤销
+SELECT id, account_name, balance
+FROM transaction_accounts;</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">八、事务的 ACID 先了解</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>特性</th><th>中文理解</th><th>例子</th></tr></thead>
+          <tbody>
+            <tr><td>Atomicity 原子性</td><td>要么全成功，要么全失败</td><td>转账不能只扣不加</td></tr>
+            <tr><td>Consistency 一致性</td><td>事务前后数据规则仍然成立</td><td>余额不能变成不合理状态</td></tr>
+            <tr><td>Isolation 隔离性</td><td>多个事务互相不要乱影响</td><td>多人同时下单时库存不能乱</td></tr>
+            <tr><td>Durability 持久性</td><td>提交后的数据要保存下来</td><td>COMMIT 后断电也不应该丢数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>入门阶段：</strong>先重点理解“原子性”。隔离级别、锁、并发问题后面再深入。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">九、哪些场景需要事务</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>场景</th><th>为什么需要事务</th></tr></thead>
+          <tbody>
+            <tr><td>转账</td><td>一个账户扣钱，另一个账户加钱，必须一起成功。</td></tr>
+            <tr><td>下单</td><td>创建订单、创建明细、扣库存，通常要绑定在一起。</td></tr>
+            <tr><td>分配角色</td><td>批量插入用户角色关系时，失败后可能要整体撤销。</td></tr>
+            <tr><td>删除复杂业务数据</td><td>删除主数据和关联数据时，要避免只删一部分。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十、哪些场景通常不需要事务</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>普通查询</h3>
+          <p>单纯 <code>SELECT</code> 列表、详情、统计，通常不需要你手动开启事务。</p>
+        </article>
+        <article class="card">
+          <h3>单条简单修改</h3>
+          <p>单条 <code>UPDATE</code> 或 <code>INSERT</code> 在 MySQL 中通常会自动作为一个小事务提交。</p>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>简单判断：</strong>如果一个业务动作包含多条必须一起成功的写操作，就优先想到事务。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十一、后端里事务长什么样</h2>
+      <article class="card">
+        <p>后端代码里，事务通常不是手写 <code>START TRANSACTION</code>，而是由 ORM 或数据库工具提供事务方法。</p>
+        <pre><code>-- 后端事务的核心思想仍然是这三步
+START TRANSACTION;
+
+-- 执行业务相关的多条 SQL
+-- 例如：创建订单、创建订单明细、扣库存
+
+COMMIT;
+
+-- 如果中途出错，就执行 ROLLBACK</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>全栈视角：</strong>你以后用 Node.js、NestJS、Prisma 或 TypeORM 时，事务思想是一样的，只是写法会变成框架 API。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十二、本阶段练习</h2>
+      <div class="practice">
+        <div class="practice-item">能解释事务为什么适合转账和下单。</div>
+        <div class="practice-item">能说出 <code>START TRANSACTION</code>、<code>COMMIT</code>、<code>ROLLBACK</code> 的作用。</div>
+        <div class="practice-item">能用事务完成 A 账户给 B 账户转账。</div>
+        <div class="practice-item">能用 <code>ROLLBACK</code> 观察修改被撤销。</div>
+        <div class="practice-item">能说出 ACID 中“原子性”的含义。</div>
+        <div class="practice-item">能判断一个业务场景是否需要事务。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="note">
+        <strong>下一步：</strong>学完事务后，继续学习锁和并发，理解多人同时修改同一份数据时数据库怎么避免冲突。
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+      <a class="nav-link" href="10-indexes.html">上一阶段</a>
+      <a class="nav-link" href="12-locks-concurrency.html">下一阶段</a>
+    </nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

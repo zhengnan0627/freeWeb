@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段十二：锁和并发控制</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段十二 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>锁和并发控制</h1>
+      <p>事务解决的是“一组操作要么都成功，要么都失败”；锁解决的是“多人同时改同一份数据时，别互相踩坏”。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、为什么需要锁</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>转账会撞车</h3>
+          <p>如果两个人同时修改同一个账户余额，都先读到旧值，再分别写回去，就可能把其中一次修改覆盖掉。</p>
+        </article>
+        <article class="card">
+          <h3>库存会超卖</h3>
+          <p>库存只剩 1 件时，两个人同时下单，如果都先看到库存大于 0，就可能都扣成功，结果卖出 2 件。</p>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>一句话：</strong>并发问题不是 SQL 写错，而是多个事务同时操作同一份数据时发生了竞争。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、先准备库存练习表</h2>
+      <article class="card">
+        <p>这里用一张新的练习表 <code>lock_products</code>，避免影响前面的事务练习。</p>
+        <pre><code>-- 创建一张专门练习并发和锁的商品表
+CREATE TABLE IF NOT EXISTS lock_products (
+  -- 商品 id
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- 商品名称
+  product_name VARCHAR(50) NOT NULL,
+  -- 库存数量，不能小于 0
+  stock INT NOT NULL CHECK (stock &gt;= 0),
+  -- 更新时间
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、准备库存数据</h2>
+      <article class="card">
+        <p>先准备一条库存只有 1 的商品，后面方便演示“超卖”问题。</p>
+        <pre><code>-- 插入一条库存为 1 的商品数据
+INSERT INTO lock_products (product_name, stock)
+VALUES ('限量商品', 1);</code></pre>
+      </article>
+      <article class="card">
+        <p>先看当前库存。</p>
+        <pre><code>-- 查看商品库存
+SELECT id, product_name, stock
+FROM lock_products;</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、没有锁时可能发生什么</h2>
+      <article class="card">
+        <p>下面是一个“看起来没问题，但并发下有风险”的思路：先查库存，再更新库存。</p>
+        <pre><code>-- 没有显式加锁时的典型思路
+SELECT id, product_name, stock
+FROM lock_products
+WHERE id = 1;
+
+-- 如果代码层判断 stock &gt; 0，就执行扣减
+UPDATE lock_products
+SET stock = stock - 1
+WHERE id = 1;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>风险点：</strong>两个事务可能同时执行第一条查询，都看到 stock = 1，然后都继续扣减，结果就超卖了。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、行锁是什么</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>锁住一行</h3>
+          <p>行锁的意思是：当前事务先占住某一行，其他事务想修改这行时，需要等当前事务结束。</p>
+        </article>
+        <article class="card">
+          <h3>不是锁整张表</h3>
+          <p>数据库通常更希望锁得尽量小。只锁你真正要操作的那一行，其他行还能继续被别的事务正常处理。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、SELECT ... FOR UPDATE</h2>
+      <article class="card">
+        <p><code>FOR UPDATE</code> 常用于事务里，表示：我不只是看这条数据，我很快就要改它，请先把它锁住。</p>
+        <pre><code>-- 开始事务，并把 id = 1 这行商品数据先锁住
+START TRANSACTION;
+
+SELECT id, product_name, stock
+FROM lock_products
+WHERE id = 1
+FOR UPDATE;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>理解方式：</strong>普通 <code>SELECT</code> 更像“看一眼”；<code>SELECT ... FOR UPDATE</code> 更像“看一眼并先把位置占住，因为我马上要改”。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">七、用锁保护扣库存</h2>
+      <article class="card">
+        <p>下面是一段更安全的库存扣减思路：先开启事务，再用 <code>FOR UPDATE</code> 锁住商品行，确认库存足够后再扣减，最后提交。</p>
+        <pre><code>-- 开始事务，准备扣库存
+START TRANSACTION;
+
+-- 先锁住要操作的商品行
+SELECT id, product_name, stock
+FROM lock_products
+WHERE id = 1
+FOR UPDATE;
+
+-- 确认库存足够后，再执行扣减
+UPDATE lock_products
+SET stock = stock - 1
+WHERE id = 1
+  AND stock &gt; 0;
+
+-- 扣减成功后提交事务
+COMMIT;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>现实里的完整做法：</strong>后端通常还会检查 UPDATE 影响了几行。如果影响行数是 0，就说明库存不足或被别人先抢走了。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">八、锁是怎么表现出来的</h2>
+      <article class="card">
+        <p>如果事务 A 先用 <code>FOR UPDATE</code> 锁住了 id = 1 的商品，事务 B 再来修改这行时，通常会等待事务 A 提交或回滚。</p>
+        <pre><code>-- 事务 A：先锁住商品行
+START TRANSACTION;
+
+SELECT id, product_name, stock
+FROM lock_products
+WHERE id = 1
+FOR UPDATE;
+
+-- 事务 B：这时如果也想更新同一行，通常会等待
+UPDATE lock_products
+SET stock = stock - 1
+WHERE id = 1;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>你在 Navicat 里怎么观察：</strong>要真正看到“等待”的效果，通常需要两个独立查询窗口或两个连接同时操作。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">九、锁和事务的关系</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>概念</th><th>解决什么问题</th></tr></thead>
+          <tbody>
+            <tr><td>事务</td><td>保证一组操作要么都成功，要么都失败。</td></tr>
+            <tr><td>锁</td><td>保证多人同时改同一份数据时，不会互相覆盖或产生脏结果。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>搭配理解：</strong>事务偏“整体成功失败”，锁偏“并发时谁先改、谁后改”。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十、悲观锁和乐观锁先建立感觉</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>悲观锁</h3>
+          <p>先假设冲突很可能发生，所以先锁住数据再改。<code>SELECT ... FOR UPDATE</code> 就是典型例子。</p>
+        </article>
+        <article class="card">
+          <h3>乐观锁</h3>
+          <p>先假设冲突不常发生，不先锁，而是在更新时检查版本号或更新时间，发现被别人改过就重试或报错。</p>
+        </article>
+      </div>
+      <article class="card" style="margin-top: 16px;">
+        <p>乐观锁在后端代码里很常见，通常会多一个版本字段。</p>
+        <pre><code>-- 乐观锁思路：只有版本号没变，才允许更新
+UPDATE some_table
+SET stock = stock - 1,
+    version = version + 1
+WHERE id = 1
+  AND version = 3;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>入门建议：</strong>现在先把悲观锁和 <code>FOR UPDATE</code> 理解透，乐观锁先知道思路就够了。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十一、哪些场景要特别想到锁</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>场景</th><th>为什么会有并发冲突</th></tr></thead>
+          <tbody>
+            <tr><td>扣库存</td><td>多人同时下单，都会盯着同一件商品的库存。</td></tr>
+            <tr><td>抢优惠券</td><td>同一批券被很多人同时领取。</td></tr>
+            <tr><td>余额扣减</td><td>多人或多个请求同时修改同一个账户余额。</td></tr>
+            <tr><td>座位/名额预约</td><td>有限资源被多人同时争抢。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十二、本阶段练习</h2>
+      <div class="practice">
+        <div class="practice-item">能说出事务和锁分别解决什么问题。</div>
+        <div class="practice-item">能解释为什么先查库存再更新，在并发下可能超卖。</div>
+        <div class="practice-item">能理解 <code>SELECT ... FOR UPDATE</code> 为什么要放在事务里使用。</div>
+        <div class="practice-item">能说出行锁为什么比锁整张表更常见。</div>
+        <div class="practice-item">能区分悲观锁和乐观锁的大致思路。</div>
+        <div class="practice-item">能判断库存、余额、抢券这类场景为什么要考虑并发控制。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="note">
+        <strong>下一步：</strong>学完锁之后，继续进入后端里的数据库实践，比如连接池、参数化查询、接口返回字段和代码里的事务。
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+      <a class="nav-link" href="11-transactions.html">上一阶段</a>
+      <a class="nav-link" href="13-backend-database.html">下一阶段</a>
+    </nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

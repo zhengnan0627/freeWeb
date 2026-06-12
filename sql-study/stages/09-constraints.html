@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段九：约束和数据可靠性</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段九 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>约束和数据可靠性</h1>
+      <p>约束就是数据库层面的规则。它能帮你防止空用户名、重复邮箱、负数年龄、没有作者的文章这类明显不合理的数据进入表里。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、为什么要学约束</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>后端校验不够吗</h3>
+          <p>后端当然要校验，但数据库也要有底线规则。这样即使某个接口漏校验，数据库也能拦住一部分脏数据。</p>
+        </article>
+        <article class="card">
+          <h3>约束是最后一道门</h3>
+          <p>比如用户名不能为空、邮箱不能重复、文章必须属于某个用户，这些都适合交给数据库约束兜底。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、常见约束速览</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>约束</th><th>作用</th><th>例子</th></tr></thead>
+          <tbody>
+            <tr><td><code>PRIMARY KEY</code></td><td>唯一标识一行数据</td><td>用户 id</td></tr>
+            <tr><td><code>NOT NULL</code></td><td>字段不能为空</td><td>用户名不能为空</td></tr>
+            <tr><td><code>UNIQUE</code></td><td>字段值不能重复</td><td>邮箱不能重复</td></tr>
+            <tr><td><code>DEFAULT</code></td><td>不传值时使用默认值</td><td>状态默认 active</td></tr>
+            <tr><td><code>CHECK</code></td><td>限制字段值必须满足条件</td><td>年龄不能小于 0</td></tr>
+            <tr><td><code>FOREIGN KEY</code></td><td>限制字段必须引用另一张表中存在的数据</td><td>文章 user_id 必须对应真实用户</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、创建带约束的用户练习表</h2>
+      <article class="card">
+        <p>为了不影响前面已有的 users 表，这里新建一张 <code>constraint_users</code> 练习表。</p>
+        <pre><code>-- 创建一张专门练习约束的用户表
+CREATE TABLE IF NOT EXISTS constraint_users (
+  -- 主键：唯一标识一行用户数据，并且自动递增
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- 非空约束：用户名必须填写
+  username VARCHAR(50) NOT NULL,
+  -- 唯一约束：邮箱不能重复
+  email VARCHAR(100) UNIQUE,
+  -- 检查约束：年龄必须大于等于 0
+  age INT CHECK (age &gt;= 0),
+  -- 默认值：不传状态时，默认是 active
+  status VARCHAR(20) DEFAULT 'active',
+  -- 默认值：不传创建时间时，默认是当前时间
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、插入一条符合约束的数据</h2>
+      <article class="card">
+        <p>这条数据符合所有规则，所以可以正常插入。</p>
+        <pre><code>-- 插入一条符合约束的用户数据
+INSERT INTO constraint_users (username, email, age)
+VALUES ('zhangsan', 'zhangsan@example.com', 18);</code></pre>
+      </article>
+      <article class="card">
+        <p>查询后你会看到 <code>status</code> 和 <code>created_at</code> 自动有值，因为它们设置了默认值。</p>
+        <pre><code>-- 查看刚才插入的用户数据
+SELECT id, username, email, age, status, created_at
+FROM constraint_users;</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、NOT NULL：不能为空</h2>
+      <article class="card">
+        <p>下面这句会报错，因为 <code>username</code> 设置了 <code>NOT NULL</code>，不能不填。</p>
+        <pre><code>-- 观察 NOT NULL 约束：这句会报错，建议单独执行
+INSERT INTO constraint_users (email, age)
+VALUES ('no-name@example.com', 20);</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>真实项目：</strong>用户名、手机号、订单编号这类核心字段，通常都不应该允许为空。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、UNIQUE：不能重复</h2>
+      <article class="card">
+        <p>下面这句会报错，因为 <code>email</code> 设置了 <code>UNIQUE</code>，同一个邮箱不能出现两次。</p>
+        <pre><code>-- 观察 UNIQUE 约束：这句会因为邮箱重复而报错，建议单独执行
+INSERT INTO constraint_users (username, email, age)
+VALUES ('another_zhangsan', 'zhangsan@example.com', 22);</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>真实项目：</strong>账号、邮箱、手机号、角色编码这类字段，经常会加唯一约束。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">七、DEFAULT：默认值</h2>
+      <article class="card">
+        <p>插入时不写 <code>status</code>，数据库会自动使用默认值 <code>active</code>。</p>
+        <pre><code>-- 不传 status，数据库会自动填入默认值 active
+INSERT INTO constraint_users (username, email, age)
+VALUES ('lisi', 'lisi@example.com', 20);
+
+-- 查看 status 默认值是否生效
+SELECT id, username, status
+FROM constraint_users
+WHERE email = 'lisi@example.com';</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">八、CHECK：限制字段值范围</h2>
+      <article class="card">
+        <p>下面这句会报错，因为年龄不能小于 0。</p>
+        <pre><code>-- 观察 CHECK 约束：这句会因为年龄小于 0 而报错，建议单独执行
+INSERT INTO constraint_users (username, email, age)
+VALUES ('bad_age_user', 'bad-age@example.com', -1);</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>注意：</strong><code>CHECK</code> 适合表达简单规则；复杂业务规则还是应该主要放在后端代码里。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">九、创建带外键的文章表</h2>
+      <article class="card">
+        <p>外键约束可以保证：文章的 <code>user_id</code> 必须对应一个真实存在的用户。</p>
+        <pre><code>-- 创建一张带外键约束的文章练习表
+CREATE TABLE IF NOT EXISTS constraint_articles (
+  -- 文章自己的唯一编号
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- 作者 id，必须对应 constraint_users 表里的 id
+  user_id INT NOT NULL,
+  -- 文章标题，不能为空
+  title VARCHAR(100) NOT NULL,
+  -- 文章内容，可以为空
+  content TEXT,
+  -- 创建时间，不传值时默认当前时间
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  -- 外键约束：constraint_articles.user_id 必须引用 constraint_users.id
+  CONSTRAINT fk_constraint_articles_user
+    FOREIGN KEY (user_id) REFERENCES constraint_users(id)
+);</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十、FOREIGN KEY：必须引用真实存在的数据</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>插入正确的文章</h3>
+          <p>这里假设 <code>constraint_users</code> 表里存在 id 为 1 的用户。</p>
+          <pre><code>-- 给 id 等于 1 的用户插入一篇文章
+INSERT INTO constraint_articles (user_id, title, content)
+VALUES (1, '约束学习笔记', '记录 NOT NULL、UNIQUE、FOREIGN KEY 的作用');</code></pre>
+        </article>
+        <article class="card">
+          <h3>插入错误的文章</h3>
+          <p>下面这句会报错，因为通常不存在 id 为 99999 的用户。</p>
+          <pre><code>-- 观察外键约束：这句会因为用户不存在而报错，建议单独执行
+INSERT INTO constraint_articles (user_id, title, content)
+VALUES (99999, '没有作者的文章', '这条数据不应该被允许');</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>真实项目：</strong>外键能保证数据关系可靠，但有些团队会因为性能、迁移、分库等原因不在数据库层加外键，而是在后端代码里维护关系。你先理解概念最重要。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十一、外键删除规则先了解</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>规则</th><th>含义</th><th>适合场景</th></tr></thead>
+          <tbody>
+            <tr><td><code>RESTRICT</code></td><td>如果用户下面还有文章，就不允许删除用户</td><td>默认更安全</td></tr>
+            <tr><td><code>CASCADE</code></td><td>删除用户时，自动删除这个用户的文章</td><td>确定从属数据也要删除</td></tr>
+            <tr><td><code>SET NULL</code></td><td>删除用户时，把文章的 user_id 设置为空</td><td>文章可以保留但没有作者</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>入门建议：</strong>先不要急着使用级联删除。真实项目里删除数据很敏感，通常会更偏向软删除或明确确认。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十二、本阶段练习</h2>
+      <div class="practice">
+        <div class="practice-item">能说出 <code>NOT NULL</code>、<code>UNIQUE</code>、<code>DEFAULT</code> 分别解决什么问题。</div>
+        <div class="practice-item">能创建一张带主键、非空、唯一、默认值的练习表。</div>
+        <div class="practice-item">能观察违反约束时数据库会报错。</div>
+        <div class="practice-item">能解释外键为什么能保证文章必须属于真实用户。</div>
+        <div class="practice-item">能说清楚数据库约束和后端校验不是互相替代，而是互相配合。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="note">
+        <strong>下一步：</strong>学完约束后，继续学习索引。索引会让查询更快，但也会带来写入成本和设计取舍。
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+      <a class="nav-link" href="08-sql-execution-order.html">上一阶段</a>
+      <a class="nav-link" href="10-indexes.html">下一阶段</a>
+    </nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

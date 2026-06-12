@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段二：表结构和建表语句</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段二 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>表结构和建表语句</h1>
+      <p>这一阶段重点理解 users 表怎么设计，以及字段名、类型、约束、自增主键分别是什么意思。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、第一张 users 表</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>字段</th><th>类型</th><th>约束</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td><code>INT</code></td><td><code>PRIMARY KEY</code>、<code>AUTO_INCREMENT</code></td><td>用户唯一编号，自动递增。</td></tr>
+            <tr><td><code>username</code></td><td><code>VARCHAR(50)</code></td><td><code>NOT NULL</code></td><td>最多 50 个字符，并且不能为空。</td></tr>
+            <tr><td><code>age</code></td><td><code>INT</code></td><td>无</td><td>整数，可以为空。</td></tr>
+            <tr><td><code>created_at</code></td><td><code>DATETIME</code></td><td><code>DEFAULT CURRENT_TIMESTAMP</code></td><td>不传值时自动写入当前时间。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section card">
+      <h2 class="section-title">二、建表 SQL 怎么读</h2>
+      <pre><code>-- 创建 users 用户表
+CREATE TABLE users (
+  -- id 是主键，会自动生成 1、2、3...
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- username 是用户名，不能为空，最多 50 个字符
+  username VARCHAR(50) NOT NULL,
+  -- age 是年龄，可以为空
+  age INT,
+  -- created_at 是创建时间，不传值时默认当前时间
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+      <details open>
+        <summary>逐行解释</summary>
+        <p><code>CREATE TABLE users</code>：创建一张名为 users 的表。</p>
+        <p><code>id INT PRIMARY KEY AUTO_INCREMENT</code>：id 是整数主键，并且自动递增。</p>
+        <p><code>username VARCHAR(50) NOT NULL</code>：用户名最多 50 个字符，不能为空。</p>
+        <p><code>age INT</code>：年龄是整数，可以为空。</p>
+        <p><code>created_at DATETIME DEFAULT CURRENT_TIMESTAMP</code>：创建时间默认使用当前时间。</p>
+      </details>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、id、主键和自增</h2>
+      <div class="grid">
+        <article class="card"><h3>不写 id 就没有 id</h3><p>数据库不会默认给表添加 <code>id</code>。你在建表时设计了这个字段，表里才会有。</p><pre><code>-- 字段定义片段：放在 CREATE TABLE 的括号里面使用
+id INT PRIMARY KEY AUTO_INCREMENT</code></pre></article>
+        <article class="card"><h3>三层含义</h3><p><code>id</code> 是字段名，<code>INT</code> 是整数类型，后面的关键字表示它是自动递增的主键。</p></article>
+        <article class="card"><h3>通常只有一个</h3><p>一张表可以有很多普通字段，但通常只需要一个自增主键来唯一标识每一行。</p></article>
+        <article class="card"><h3>名字可以改变</h3><p>它也可以叫 <code>user_id</code>，只是很多项目会统一使用 <code>id</code>。</p><pre><code>-- 字段定义片段：字段名也可以叫 user_id
+user_id INT PRIMARY KEY AUTO_INCREMENT</code></pre></article>
+      </div>
+      <div class="note" style="margin-top: 16px;"><strong>Excel 类比：</strong>id 就像你主动增加的“唯一编号”列。你不加，它就不存在。</div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、SQL 关键字顺序</h2>
+      <div class="grid">
+        <article class="card"><h3>查询语句</h3><pre><code>-- 查询用户 id 和用户名，并按创建时间倒序排列
+SELECT id, username
+FROM users
+WHERE age &gt; 18
+ORDER BY created_at DESC;</code></pre></article>
+        <article class="card"><h3>常见顺序</h3><p>先写 <code>SELECT</code>，再写 <code>FROM</code>，然后是 <code>WHERE</code>，最后是 <code>ORDER BY</code>。</p></article>
+        <article class="card"><h3>字段定义</h3><p>推荐按“字段名、字段类型、字段约束”的顺序书写。</p><pre><code>-- 字段定义片段：推荐按字段名、类型、约束的顺序写
+id INT PRIMARY KEY AUTO_INCREMENT</code></pre></article>
+        <article class="card"><h3>少数规则可以换</h3><p>某些约束的顺序可能都能执行，但入门阶段固定一种标准写法更容易阅读和排错。</p></article>
+      </div>
+    </section>
+
+    <section class="section"><div class="note"><strong>阶段目标：</strong>你能看懂一张简单表的字段设计，知道 id、主键、自增和默认值的作用。</div></section>
+    <nav class="chapter-nav"><a class="nav-link" href="01-basics.html">上一阶段</a><a class="nav-link" href="03-data-operations.html">下一阶段</a></nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

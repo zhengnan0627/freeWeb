@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段六：表关系和 JOIN 联表</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段六 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>表关系和 JOIN 联表</h1>
+      <p>真实业务很少只查一张表。这一阶段学习如何用外键字段建立关系，再用 JOIN 把相关数据一起查出来。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、为什么需要多张表</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>不要把所有数据塞进 users 表</h3>
+          <p>用户信息、文章信息、订单信息属于不同业务对象，应该拆成不同表。</p>
+        </article>
+        <article class="card">
+          <h3>表之间靠 id 建立关系</h3>
+          <p>比如文章表里的 <code>user_id</code>，表示这篇文章属于哪个用户。</p>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>Excel 类比：</strong>users 是一张用户 Sheet，articles 是一张文章 Sheet，articles 里的 user_id 用来指向 users 里的 id。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、创建 articles 表</h2>
+      <article class="card">
+        <p>文章表用 <code>user_id</code> 记录作者是谁。这个字段会存 users 表中的用户 id。</p>
+        <pre><code>-- 创建 articles 文章表
+CREATE TABLE articles (
+  -- 文章自己的唯一编号
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- 作者 id，对应 users 表里的 id
+  user_id INT NOT NULL,
+  -- 文章标题，不能为空
+  title VARCHAR(100) NOT NULL,
+  -- 文章内容，可以为空
+  content TEXT,
+  -- 创建时间，不传值时默认当前时间
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、准备文章数据</h2>
+      <article class="card">
+        <p>这里假设 users 表里已经有 id 为 1、2、3 的用户。</p>
+        <pre><code>-- 给不同用户插入几篇文章
+INSERT INTO articles (user_id, title, content) VALUES
+  (1, 'SQL 入门笔记', '记录 SELECT 和 WHERE 的学习内容'),
+  (1, 'MySQL 排序分页', '记录 ORDER BY 和 LIMIT 的使用'),
+  (2, '前端转全栈', '记录从前端学习后端和数据库的路线'),
+  (3, 'JOIN 联表查询', '记录用户和文章如何关联查询');</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>注意：</strong>如果你的 users 表里没有对应 id，插入后联表查询时可能查不到作者信息。先确认 users 表里有哪些 id。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、先分别查询两张表</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>查询用户表</h3>
+          <pre><code>-- 查看用户表中的 id 和用户名
+SELECT id, username
+FROM users;</code></pre>
+        </article>
+        <article class="card">
+          <h3>查询文章表</h3>
+          <pre><code>-- 查看文章表中的文章和作者 id
+SELECT id, user_id, title, created_at
+FROM articles;</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>观察重点：</strong>articles 表里的 <code>user_id</code> 不是用户名，它只是指向 users 表中某个用户的 id。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、INNER JOIN：只查匹配成功的数据</h2>
+      <article class="card">
+        <p><code>INNER JOIN</code> 会把两张表中能匹配上的数据查出来。</p>
+        <pre><code>-- 查询文章列表，同时带出作者用户名
+SELECT
+  articles.id,
+  articles.title,
+  users.username,
+  articles.created_at
+FROM articles
+INNER JOIN users ON articles.user_id = users.id;</code></pre>
+        <details open>
+          <summary>怎么理解 ON 条件</summary>
+          <p><code>articles.user_id = users.id</code> 表示：文章表里的作者 id，要等于用户表里的用户 id。</p>
+        </details>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、给表起别名，让 SQL 更短</h2>
+      <article class="card">
+        <p>真实项目里经常给表起别名。<code>articles a</code> 表示 articles 表临时叫 a，<code>users u</code> 表示 users 表临时叫 u。</p>
+        <pre><code>-- 使用表别名简化联表查询
+SELECT
+  a.id,
+  a.title,
+  u.username,
+  a.created_at
+FROM articles a
+INNER JOIN users u ON a.user_id = u.id;</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">七、LEFT JOIN：保留左表数据</h2>
+      <article class="card">
+        <p><code>LEFT JOIN</code> 会保留左边表的数据。即使右边表没有匹配，也会先把左表记录查出来。</p>
+        <pre><code>-- 查询所有文章，即使作者信息匹配不到也保留文章
+SELECT
+  a.id,
+  a.title,
+  u.username,
+  a.created_at
+FROM articles a
+LEFT JOIN users u ON a.user_id = u.id;</code></pre>
+      </article>
+      <div class="table-wrap" style="margin-top: 16px;">
+        <table>
+          <thead><tr><th>JOIN 类型</th><th>特点</th><th>常见用途</th></tr></thead>
+          <tbody>
+            <tr><td><code>INNER JOIN</code></td><td>只保留两边匹配成功的数据</td><td>只查有作者的文章</td></tr>
+            <tr><td><code>LEFT JOIN</code></td><td>先保留左表数据，右表匹配不到就显示空</td><td>文章列表中尽量保留文章记录</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">八、联表时字段名冲突怎么办</h2>
+      <article class="card">
+        <p>users 和 articles 都有 <code>id</code>、<code>created_at</code>。联表查询时建议给返回字段起别名。</p>
+        <pre><code>-- 给查询结果字段起别名，避免前端拿到重复或含义不清的字段名
+SELECT
+  a.id AS article_id,
+  a.title AS article_title,
+  u.id AS author_id,
+  u.username AS author_name,
+  a.created_at AS article_created_at
+FROM articles a
+INNER JOIN users u ON a.user_id = u.id;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>后端返回数据：</strong><code>AS article_id</code> 这种别名，通常会变成接口返回对象里的字段名。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">九、联表 + WHERE + ORDER BY</h2>
+      <article class="card">
+        <p>联表查询也可以继续使用筛选和排序。下面查询某个用户发布的文章，并按创建时间倒序排列。</p>
+        <pre><code>-- 查询 id 等于 1 的用户发布的文章，并按时间倒序排列
+SELECT
+  a.id AS article_id,
+  a.title,
+  u.username AS author_name,
+  a.created_at
+FROM articles a
+INNER JOIN users u ON a.user_id = u.id
+WHERE u.id = 1
+ORDER BY a.created_at DESC;</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十、本阶段练习</h2>
+      <div class="practice">
+        <div class="practice-item">创建 articles 表，并理解 user_id 为什么能表示作者。</div>
+        <div class="practice-item">分别查询 users 表和 articles 表，观察 id 与 user_id 的关系。</div>
+        <div class="practice-item">使用 INNER JOIN 查询文章标题和作者用户名。</div>
+        <div class="practice-item">把联表 SQL 改成表别名写法。</div>
+        <div class="practice-item">给返回字段起别名，例如 article_id、author_name。</div>
+        <div class="practice-item">查询某个用户发布的所有文章，并按创建时间倒序排列。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="note">
+        <strong>下一步：</strong>掌握一对多关系后，继续学习多对多关系，例如用户、角色、用户角色关联表。
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+      <a class="nav-link" href="05-list-queries.html">上一阶段</a>
+      <a class="nav-link" href="07-many-to-many.html">下一阶段</a>
+    </nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段八：SQL 书写顺序和逻辑处理顺序</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段八 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>SQL 书写顺序和逻辑处理顺序</h1>
+      <p>SQL 看起来从 SELECT 开始写，但数据库真正理解查询时，通常会先处理 FROM、JOIN 和 WHERE。它不是变量提升，而是 SQL 的解析规则。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、先记住这句话</h2>
+      <div class="note">
+        <strong>重点：</strong>
+        SQL 的书写顺序，是给人看的语法顺序；SQL 的逻辑处理顺序，是数据库理解“数据从哪里来、怎么过滤、怎么分组、最后返回什么”的顺序。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、常见查询的书写顺序</h2>
+      <article class="card">
+        <p>你写 SQL 时，一般按下面这个顺序写。</p>
+        <pre><code>-- SQL 的常见书写顺序
+SELECT 字段列表
+FROM 主表
+JOIN 关联表 ON 关联条件
+WHERE 行级筛选条件
+GROUP BY 分组字段
+HAVING 分组后的筛选条件
+ORDER BY 排序字段
+LIMIT 返回条数 OFFSET 跳过条数;</code></pre>
+      </article>
+      <div class="table-wrap" style="margin-top: 16px;">
+        <table>
+          <thead><tr><th>书写顺序</th><th>关键字</th><th>你写它是为了什么</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>SELECT</code></td><td>声明最终想返回哪些字段。</td></tr>
+            <tr><td>2</td><td><code>FROM</code></td><td>声明数据来自哪张主表。</td></tr>
+            <tr><td>3</td><td><code>JOIN ... ON</code></td><td>声明要连接哪些表，以及表之间怎么匹配。</td></tr>
+            <tr><td>4</td><td><code>WHERE</code></td><td>声明普通行数据的筛选条件。</td></tr>
+            <tr><td>5</td><td><code>GROUP BY</code></td><td>声明按什么字段分组。</td></tr>
+            <tr><td>6</td><td><code>HAVING</code></td><td>声明分组统计之后的筛选条件。</td></tr>
+            <tr><td>7</td><td><code>ORDER BY</code></td><td>声明结果怎么排序。</td></tr>
+            <tr><td>8</td><td><code>LIMIT / OFFSET</code></td><td>声明最终返回多少条、跳过多少条。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、数据库的逻辑处理顺序</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>逻辑顺序</th><th>关键字</th><th>数据库在做什么</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>FROM</code></td><td>先确定从哪张表开始取数据。</td></tr>
+            <tr><td>2</td><td><code>JOIN ... ON</code></td><td>把相关表连接起来，并根据 ON 条件匹配数据。</td></tr>
+            <tr><td>3</td><td><code>WHERE</code></td><td>对连接后的行数据做筛选。</td></tr>
+            <tr><td>4</td><td><code>GROUP BY</code></td><td>把筛选后的数据按字段分组。</td></tr>
+            <tr><td>5</td><td>聚合函数</td><td>计算 <code>COUNT</code>、<code>SUM</code>、<code>AVG</code> 等统计值。</td></tr>
+            <tr><td>6</td><td><code>HAVING</code></td><td>对分组后的结果继续筛选。</td></tr>
+            <tr><td>7</td><td><code>SELECT</code></td><td>决定最终输出哪些字段和表达式。</td></tr>
+            <tr><td>8</td><td><code>DISTINCT</code></td><td>去掉重复结果。</td></tr>
+            <tr><td>9</td><td><code>ORDER BY</code></td><td>对最终结果排序。</td></tr>
+            <tr><td>10</td><td><code>LIMIT / OFFSET</code></td><td>截取最终要返回的数据范围。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>所以：</strong>表别名写在 <code>FROM</code> 里，但 <code>SELECT</code> 能使用它，是因为数据库会先理解数据来源和表别名，再决定 SELECT 返回什么。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、为什么 SELECT 里能先看到表别名</h2>
+      <article class="card">
+        <p>这不是 JS 的变量提升。数据库会先解析整条 SQL，知道 <code>users AS u</code> 和 <code>roles AS r</code> 分别代表什么。</p>
+        <pre><code>-- 虽然 SELECT 写在前面，但表别名来自 FROM 和 JOIN
+SELECT
+  u.id AS user_id,
+  u.username,
+  r.role_name
+FROM users AS u
+INNER JOIN user_roles AS ur ON u.id = ur.user_id
+INNER JOIN roles AS r ON ur.role_id = r.id;</code></pre>
+      </article>
+      <div class="table-wrap" style="margin-top: 16px;">
+        <table>
+          <thead><tr><th>别名</th><th>在哪里定义</th><th>代表什么</th></tr></thead>
+          <tbody>
+            <tr><td><code>u</code></td><td><code>FROM users AS u</code></td><td>users 表。</td></tr>
+            <tr><td><code>ur</code></td><td><code>JOIN user_roles AS ur</code></td><td>user_roles 表。</td></tr>
+            <tr><td><code>r</code></td><td><code>JOIN roles AS r</code></td><td>roles 表。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、字段别名为什么不能随便在 WHERE 里用</h2>
+      <article class="card">
+        <p><code>WHERE</code> 的逻辑处理顺序比 <code>SELECT</code> 早，所以很多情况下，WHERE 还不知道 SELECT 里起的字段别名。</p>
+        <pre><code>-- 这个写法通常会报错：WHERE 早于 SELECT，WHERE 不认识 user_age
+SELECT
+  age AS user_age
+FROM users
+WHERE user_age &gt;= 18;</code></pre>
+      </article>
+      <article class="card">
+        <p>正确写法是：在 <code>WHERE</code> 里使用真实字段名。</p>
+        <pre><code>-- 正确写法：WHERE 使用真实字段 age
+SELECT
+  age AS user_age
+FROM users
+WHERE age &gt;= 18;</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、为什么 ORDER BY 又能用 SELECT 别名</h2>
+      <article class="card">
+        <p><code>ORDER BY</code> 的逻辑顺序在 <code>SELECT</code> 后面，所以它通常能使用 SELECT 中定义的字段别名。</p>
+        <pre><code>-- ORDER BY 通常可以使用 SELECT 中定义的别名
+SELECT
+  age AS user_age
+FROM users
+ORDER BY user_age DESC;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>对比记忆：</strong><code>WHERE</code> 比 <code>SELECT</code> 早，所以通常不能用 SELECT 别名；<code>ORDER BY</code> 比 <code>SELECT</code> 晚，所以通常能用 SELECT 别名。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">七、WHERE 和 HAVING 的区别</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>WHERE：分组前筛选行</h3>
+          <p>先把不符合条件的行过滤掉，再进行分组统计。</p>
+          <pre><code>-- 先筛选成年用户，再按年龄分组统计
+SELECT
+  age,
+  COUNT(*) AS user_total
+FROM users
+WHERE age &gt;= 18
+GROUP BY age;</code></pre>
+        </article>
+        <article class="card">
+          <h3>HAVING：分组后筛选组</h3>
+          <p>先分组统计，再筛选统计结果。</p>
+          <pre><code>-- 先按年龄分组，再只保留人数大于 1 的年龄组
+SELECT
+  age,
+  COUNT(*) AS user_total
+FROM users
+GROUP BY age
+HAVING COUNT(*) &gt; 1;</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>简单记：</strong><code>WHERE</code> 筛选原始行，<code>HAVING</code> 筛选分组后的统计结果。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">八、ON 和 WHERE 在 JOIN 中的区别</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>ON：决定表怎么匹配</h3>
+          <p><code>ON</code> 是连接条件，说明两张表通过什么字段对应起来。</p>
+          <pre><code>-- ON 表示文章表的 user_id 要匹配用户表的 id
+SELECT
+  a.id AS article_id,
+  a.title,
+  u.username
+FROM articles AS a
+INNER JOIN users AS u ON a.user_id = u.id;</code></pre>
+        </article>
+        <article class="card">
+          <h3>WHERE：连接后再筛选</h3>
+          <p><code>WHERE</code> 是筛选条件，说明连接完成后只保留哪些记录。</p>
+          <pre><code>-- 先连接文章和用户，再筛选用户 id 等于 1 的文章
+SELECT
+  a.id AS article_id,
+  a.title,
+  u.username
+FROM articles AS a
+INNER JOIN users AS u ON a.user_id = u.id
+WHERE u.id = 1;</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>注意：</strong>在 <code>INNER JOIN</code> 中，部分条件放 ON 或 WHERE 结果可能一样；但在 <code>LEFT JOIN</code> 中差别会很明显，入门阶段先把“ON 管匹配，WHERE 管筛选”记牢。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">九、完整复杂查询怎么按逻辑顺序看</h2>
+      <article class="card">
+        <p>看复杂 SQL 时，不要从第一行 SELECT 硬读。先找 FROM 和 JOIN，再看 WHERE、GROUP BY、HAVING，最后看 SELECT、ORDER BY、LIMIT。</p>
+        <pre><code>-- 查询每个用户拥有多少个角色，只保留角色数大于 1 的用户
+SELECT
+  u.id AS user_id,
+  u.username,
+  COUNT(r.id) AS role_total
+FROM users AS u
+INNER JOIN user_roles AS ur ON u.id = ur.user_id
+INNER JOIN roles AS r ON ur.role_id = r.id
+GROUP BY u.id, u.username
+HAVING COUNT(r.id) &gt; 1
+ORDER BY role_total DESC
+LIMIT 10;</code></pre>
+      </article>
+      <div class="table-wrap" style="margin-top: 16px;">
+        <table>
+          <thead><tr><th>阅读顺序</th><th>看哪里</th><th>你要问自己什么</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>FROM users AS u</code></td><td>主表是谁？</td></tr>
+            <tr><td>2</td><td><code>JOIN user_roles / roles</code></td><td>连接了哪些表？靠什么字段连接？</td></tr>
+            <tr><td>3</td><td><code>GROUP BY</code></td><td>按什么分组？</td></tr>
+            <tr><td>4</td><td><code>HAVING</code></td><td>分组后保留哪些组？</td></tr>
+            <tr><td>5</td><td><code>SELECT</code></td><td>最终返回哪些字段？</td></tr>
+            <tr><td>6</td><td><code>ORDER BY / LIMIT</code></td><td>怎么排序？返回多少条？</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十、本阶段练习</h2>
+      <div class="practice">
+        <div class="practice-item">能说出 SQL 书写顺序和逻辑处理顺序为什么不同。</div>
+        <div class="practice-item">能解释为什么表别名写在 FROM 里，但 SELECT 里可以使用。</div>
+        <div class="practice-item">能解释为什么 SELECT 字段别名通常不能直接用于 WHERE。</div>
+        <div class="practice-item">能说清楚 WHERE 和 HAVING 的区别。</div>
+        <div class="practice-item">能说清楚 JOIN 里的 ON 和 WHERE 各自负责什么。</div>
+        <div class="practice-item">读复杂 SQL 时，先找 FROM 和 JOIN，再看筛选、分组、返回字段。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="note">
+        <strong>下一步：</strong>掌握 SQL 逻辑顺序后，继续学习约束，让数据库从“能存数据”进入“能拦住明显错误的数据”。
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+      <a class="nav-link" href="07-many-to-many.html">上一阶段</a>
+      <a class="nav-link" href="09-constraints.html">下一阶段</a>
+    </nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

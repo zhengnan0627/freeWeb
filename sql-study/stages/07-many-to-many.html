@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段七：多对多关系和关联表</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段七 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>多对多关系和关联表</h1>
+      <p>一对多之后，真实项目里很快会遇到多对多。典型例子是：一个用户可以有多个角色，一个角色也可以分配给多个用户。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、什么是多对多</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>一个用户有多个角色</h3>
+          <p>比如 zhangsan 既可以是管理员，也可以是运营人员。</p>
+        </article>
+        <article class="card">
+          <h3>一个角色属于多个用户</h3>
+          <p>比如管理员这个角色，可以同时分配给 zhangsan、lisi、wangwu。</p>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>关键点：</strong>多对多不能只靠 users 表或 roles 表表达，通常需要第三张“关联表”。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、三张表分别负责什么</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>表名</th><th>存什么</th><th>例子</th></tr></thead>
+          <tbody>
+            <tr><td><code>users</code></td><td>用户本身的信息</td><td>zhangsan、lisi</td></tr>
+            <tr><td><code>roles</code></td><td>角色本身的信息</td><td>管理员、运营、访客</td></tr>
+            <tr><td><code>user_roles</code></td><td>用户和角色之间的关系</td><td>用户 1 拥有角色 2</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>Excel 类比：</strong>users 是用户 Sheet，roles 是角色 Sheet，user_roles 是一张专门记录“谁拥有什么角色”的关系 Sheet。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、创建 roles 角色表</h2>
+      <article class="card">
+        <p>角色表只存角色自己的信息，不直接存用户。</p>
+        <pre><code>-- 创建 roles 角色表
+CREATE TABLE IF NOT EXISTS roles (
+  -- 角色自己的唯一编号
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- 角色名称，不能为空，并且不能重复
+  role_name VARCHAR(50) NOT NULL UNIQUE,
+  -- 创建时间，不传值时默认当前时间
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、创建 user_roles 关联表</h2>
+      <article class="card">
+        <p>关联表不存用户名，也不存角色名，只存两个 id：用户 id 和角色 id。</p>
+        <pre><code>-- 创建用户角色关联表
+CREATE TABLE IF NOT EXISTS user_roles (
+  -- 用户 id，对应 users 表里的 id
+  user_id INT NOT NULL,
+  -- 角色 id，对应 roles 表里的 id
+  role_id INT NOT NULL,
+  -- 分配角色的时间
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  -- 组合主键：同一个用户不能重复拥有同一个角色
+  PRIMARY KEY (user_id, role_id)
+);</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>为什么没有单独 id：</strong>这张表的核心就是 <code>user_id + role_id</code> 这对关系，所以可以用它们一起当主键。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、准备角色数据</h2>
+      <article class="card">
+        <p><code>INSERT IGNORE</code> 的意思是：如果唯一字段已经存在，就忽略重复插入，避免反复练习时报错。</p>
+        <pre><code>-- 插入几条角色数据
+INSERT IGNORE INTO roles (role_name) VALUES
+  ('管理员'),
+  ('运营'),
+  ('访客');</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、给用户分配角色</h2>
+      <article class="card">
+        <p>这里假设 users 表里已经存在 id 为 1、2、3 的用户，roles 表里已经存在 id 为 1、2、3 的角色。</p>
+        <pre><code>-- 给用户分配角色
+INSERT IGNORE INTO user_roles (user_id, role_id) VALUES
+  (1, 1),
+  (1, 2),
+  (2, 2),
+  (3, 3);</code></pre>
+      </article>
+      <div class="table-wrap" style="margin-top: 16px;">
+        <table>
+          <thead><tr><th>关系</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td><code>(1, 1)</code></td><td>id 为 1 的用户拥有 id 为 1 的角色。</td></tr>
+            <tr><td><code>(1, 2)</code></td><td>id 为 1 的用户还拥有 id 为 2 的角色。</td></tr>
+            <tr><td><code>(2, 2)</code></td><td>id 为 2 的用户拥有 id 为 2 的角色。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">七、先看关联表长什么样</h2>
+      <article class="card">
+        <p>关联表里只有 id 关系，还看不到用户名和角色名。</p>
+        <pre><code>-- 查看用户角色关联表
+SELECT user_id, role_id, created_at
+FROM user_roles;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>观察重点：</strong>关联表本身不追求“人能一眼看懂”，它负责让程序和数据库准确记录关系。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">八、查询用户拥有的角色</h2>
+      <article class="card">
+        <p>这次要同时连接三张表：users、user_roles、roles。</p>
+        <pre><code>-- 查询每个用户拥有的角色
+SELECT
+  u.id AS user_id,
+  u.username,
+  r.id AS role_id,
+  r.role_name
+FROM users AS u
+INNER JOIN user_roles AS ur ON u.id = ur.user_id
+INNER JOIN roles AS r ON ur.role_id = r.id
+ORDER BY u.id ASC;</code></pre>
+        <details open>
+          <summary>怎么理解这两次 JOIN</summary>
+          <p>第一次 JOIN：用 users.id 对上 user_roles.user_id，找到用户有哪些关系记录。</p>
+          <p>第二次 JOIN：用 user_roles.role_id 对上 roles.id，找到这些关系对应的角色名称。</p>
+        </details>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">九、查询某个用户的所有角色</h2>
+      <article class="card">
+        <p>真实权限系统里，经常需要根据用户 id 查询这个用户拥有哪些角色。</p>
+        <pre><code>-- 查询 id 等于 1 的用户拥有哪些角色
+SELECT
+  u.id AS user_id,
+  u.username,
+  r.role_name
+FROM users AS u
+INNER JOIN user_roles AS ur ON u.id = ur.user_id
+INNER JOIN roles AS r ON ur.role_id = r.id
+WHERE u.id = 1;</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十、查询某个角色下有哪些用户</h2>
+      <article class="card">
+        <p>后台权限管理里，也常见“查看管理员角色下面有哪些用户”。</p>
+        <pre><code>-- 查询角色名为 管理员 的角色下有哪些用户
+SELECT
+  r.id AS role_id,
+  r.role_name,
+  u.id AS user_id,
+  u.username
+FROM roles AS r
+INNER JOIN user_roles AS ur ON r.id = ur.role_id
+INNER JOIN users AS u ON ur.user_id = u.id
+WHERE r.role_name = '管理员';</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十一、取消用户的某个角色</h2>
+      <article class="card">
+        <p>取消角色不是删除用户，也不是删除角色，而是删除 user_roles 里的那条关系。</p>
+        <pre><code>-- 取消 id 为 1 的用户的 id 为 2 的角色
+DELETE FROM user_roles
+WHERE user_id = 1
+  AND role_id = 2;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>安全习惯：</strong>删除关联关系前，也可以先用同样的 <code>WHERE</code> 条件查询确认。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十二、本阶段练习</h2>
+      <div class="practice">
+        <div class="practice-item">能说清楚为什么用户和角色是多对多关系。</div>
+        <div class="practice-item">能解释 user_roles 表为什么只存 user_id 和 role_id。</div>
+        <div class="practice-item">创建 roles 表和 user_roles 表。</div>
+        <div class="practice-item">给一个用户分配多个角色。</div>
+        <div class="practice-item">用三表 JOIN 查询每个用户拥有哪些角色。</div>
+        <div class="practice-item">删除 user_roles 中的一条记录，理解这是“取消关系”。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="note">
+        <strong>下一步：</strong>掌握多对多关系后，继续学习 SQL 的书写顺序和逻辑处理顺序，把复杂查询真正看懂。
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+      <a class="nav-link" href="06-join-relations.html">上一阶段</a>
+      <a class="nav-link" href="08-sql-execution-order.html">下一阶段</a>
+    </nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>

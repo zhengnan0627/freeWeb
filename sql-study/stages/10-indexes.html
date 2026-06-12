@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阶段十：索引和查询性能</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="home-link" href="../index.html">返回目录</a>
+      <span class="progress">阶段十 / 共十三阶段</span>
+    </header>
+
+    <section class="hero">
+      <h1>索引和查询性能</h1>
+      <p>索引是数据库性能里最重要的基础能力之一。它能让查询更快，但也会让写入和维护变重，所以不是越多越好。</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">一、索引是什么</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>像书的目录</h3>
+          <p>没有目录时，只能一页一页找；有目录时，可以先定位大概位置，再快速找到内容。</p>
+        </article>
+        <article class="card">
+          <h3>像 Excel 的快速定位</h3>
+          <p>没有索引时，数据库可能要从第一行扫到最后一行；有合适索引时，可以更快定位符合条件的数据。</p>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>重点：</strong>索引主要服务于查询条件、排序、关联字段，不是给每个字段都加。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">二、先创建一张索引练习表</h2>
+      <article class="card">
+        <p>为了不影响前面的 users 表，这里使用 <code>index_users</code> 作为练习表。</p>
+        <pre><code>-- 创建一张专门练习索引的用户表
+CREATE TABLE IF NOT EXISTS index_users (
+  -- 主键本身就是一种索引
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- 用户名
+  username VARCHAR(50) NOT NULL,
+  -- 邮箱
+  email VARCHAR(100),
+  -- 手机号
+  phone VARCHAR(20),
+  -- 年龄
+  age INT,
+  -- 状态
+  status VARCHAR(20) DEFAULT 'active',
+  -- 创建时间
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">三、准备练习数据</h2>
+      <article class="card">
+        <p>插入几条不同数据，方便观察按邮箱、状态、时间查询的场景。</p>
+        <pre><code>-- 插入几条索引练习数据
+INSERT INTO index_users (username, email, phone, age, status) VALUES
+  ('zhangsan', 'zhangsan@example.com', '13800000001', 18, 'active'),
+  ('lisi', 'lisi@example.com', '13800000002', 22, 'active'),
+  ('wangwu', 'wangwu@example.com', '13800000003', 30, 'disabled'),
+  ('zhaoliu', 'zhaoliu@example.com', '13800000004', 25, 'active'),
+  ('xiaoming', 'xiaoming@example.com', '13800000005', 19, 'disabled');</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">四、主键索引</h2>
+      <article class="card">
+        <p><code>PRIMARY KEY</code> 会自动创建索引，所以按 id 查询通常很快。</p>
+        <pre><code>-- 根据主键 id 查询单个用户
+SELECT id, username, email, status
+FROM index_users
+WHERE id = 1;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>真实项目：</strong>详情、编辑、删除通常都按 id 定位，这也是主键索引非常重要的原因。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">五、普通索引</h2>
+      <article class="card">
+        <p>如果经常按 <code>status</code> 查询用户列表，可以给 status 创建普通索引。</p>
+        <pre><code>-- 给 status 字段创建普通索引
+CREATE INDEX idx_index_users_status
+ON index_users (status);</code></pre>
+      </article>
+      <article class="card">
+        <p>创建索引后，下面这类查询可能更容易用到索引。</p>
+        <pre><code>-- 查询 active 状态的用户
+SELECT id, username, status
+FROM index_users
+WHERE status = 'active';</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">六、唯一索引</h2>
+      <article class="card">
+        <p>唯一索引既能加速查询，又能保证字段不重复。邮箱、手机号、账号常见这种设计。</p>
+        <pre><code>-- 给 email 字段创建唯一索引，保证邮箱不能重复
+CREATE UNIQUE INDEX uk_index_users_email
+ON index_users (email);</code></pre>
+      </article>
+      <article class="card">
+        <p>下面这句如果邮箱已经存在，会因为唯一索引而报错。</p>
+        <pre><code>-- 观察唯一索引：重复邮箱会报错，建议单独执行
+INSERT INTO index_users (username, email, phone, age)
+VALUES ('repeat_email_user', 'zhangsan@example.com', '13800000999', 28);</code></pre>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">七、联合索引</h2>
+      <article class="card">
+        <p>如果经常按状态筛选，并按创建时间排序，可以考虑联合索引。</p>
+        <pre><code>-- 创建 status 和 created_at 的联合索引
+CREATE INDEX idx_index_users_status_created_at
+ON index_users (status, created_at);</code></pre>
+      </article>
+      <article class="card">
+        <p>这个索引更适合下面这种查询：先按 status 筛选，再按 created_at 排序。</p>
+        <pre><code>-- 查询 active 用户，并按创建时间倒序
+SELECT id, username, status, created_at
+FROM index_users
+WHERE status = 'active'
+ORDER BY created_at DESC;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>顺序很重要：</strong>联合索引 <code>(status, created_at)</code> 不等于 <code>(created_at, status)</code>。常见做法是把更常用于筛选的字段放前面。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">八、索引不是越多越好</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>好处</th><th>代价</th></tr></thead>
+          <tbody>
+            <tr><td>让某些查询更快</td><td>插入、修改、删除时要维护索引，写入会变慢</td></tr>
+            <tr><td>能帮助排序和关联</td><td>索引会占用额外磁盘空间</td></tr>
+            <tr><td>唯一索引能防重复</td><td>索引太多会增加数据库维护成本</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>入门原则：</strong>经常用于 <code>WHERE</code>、<code>JOIN ON</code>、<code>ORDER BY</code> 的字段，才值得优先考虑索引。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">九、哪些写法可能让索引不好用</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>对字段做函数处理</h3>
+          <p>如果对索引字段做函数或计算，数据库可能没法直接利用索引。</p>
+          <pre><code>-- 不推荐：对字段做函数处理，可能影响索引使用
+SELECT id, username, created_at
+FROM index_users
+WHERE DATE(created_at) = '2026-06-11';</code></pre>
+        </article>
+        <article class="card">
+          <h3>LIKE 前面有百分号</h3>
+          <p><code>LIKE '%xiao%'</code> 前面不固定，普通索引通常很难直接定位。</p>
+          <pre><code>-- 可能不容易利用普通索引：前面有 %
+SELECT id, username
+FROM index_users
+WHERE username LIKE '%xiao%';</code></pre>
+        </article>
+      </div>
+      <div class="note" style="margin-top: 16px;">
+        <strong>先别焦虑：</strong>入门阶段先理解这些写法“可能影响索引”，不用立刻钻特别深的执行计划细节。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十、用 EXPLAIN 看查询计划</h2>
+      <article class="card">
+        <p><code>EXPLAIN</code> 不会真正返回业务数据，它会告诉你数据库准备怎么执行这条查询。</p>
+        <pre><code>-- 查看这条查询可能如何执行
+EXPLAIN
+SELECT id, username, status, created_at
+FROM index_users
+WHERE status = 'active'
+ORDER BY created_at DESC;</code></pre>
+      </article>
+      <div class="table-wrap" style="margin-top: 16px;">
+        <table>
+          <thead><tr><th>字段</th><th>先看什么</th></tr></thead>
+          <tbody>
+            <tr><td><code>type</code></td><td>访问方式，通常越接近 const、ref、range 越好；ALL 表示可能全表扫描。</td></tr>
+            <tr><td><code>possible_keys</code></td><td>可能用到哪些索引。</td></tr>
+            <tr><td><code>key</code></td><td>实际使用了哪个索引。</td></tr>
+            <tr><td><code>rows</code></td><td>预估要扫描多少行。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十一、删除索引</h2>
+      <article class="card">
+        <p>如果索引建错了，或者确认不再需要，可以删除索引。</p>
+        <pre><code>-- 删除 status 字段上的普通索引
+DROP INDEX idx_index_users_status
+ON index_users;</code></pre>
+      </article>
+      <div class="note" style="margin-top: 16px;">
+        <strong>注意：</strong>删除索引会影响查询性能。真实项目中不要随便删线上索引，需要先确认影响范围。
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">十二、本阶段练习</h2>
+      <div class="practice">
+        <div class="practice-item">能说出索引为什么像书的目录。</div>
+        <div class="practice-item">能区分主键索引、普通索引、唯一索引、联合索引。</div>
+        <div class="practice-item">能给经常查询的字段创建普通索引。</div>
+        <div class="practice-item">能解释为什么邮箱适合唯一索引。</div>
+        <div class="practice-item">能理解联合索引字段顺序很重要。</div>
+        <div class="practice-item">能知道索引不是越多越好。</div>
+        <div class="practice-item">能用 <code>EXPLAIN</code> 初步查看查询有没有可能用到索引。</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="note">
+        <strong>下一步：</strong>学完索引后，继续学习事务。事务会帮你处理转账、下单扣库存这类“要么都成功，要么都失败”的场景。
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+      <a class="nav-link" href="09-constraints.html">上一阶段</a>
+      <a class="nav-link" href="11-transactions.html">下一阶段</a>
+    </nav>
+  </main>
+  <script src="../script.js"></script>
+</body>
+</html>
