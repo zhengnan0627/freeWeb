@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codex桌面端 + 中转站 + CC Switch 使用文档</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", "PingFang SC", sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: #2d3748;
+            line-height: 1.8;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 50px 60px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        h1 {
+            font-size: 26px;
+            color: #1a202c;
+            text-align: center;
+            margin-bottom: 40px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #2b6cb0;
+            margin: 32px 0 16px;
+            font-weight: 500;
+        }
+
+        h3 {
+            font-size: 16px;
+            color: #4a5568;
+            margin: 20px 0 10px;
+            font-weight: 500;
+        }
+
+        p, li {
+            font-size: 15px;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .step-box {
+            background-color: #f7fafc;
+            padding: 18px 22px;
+            border-radius: 10px;
+            margin: 12px 0;
+            border-left: 4px solid #3182ce;
+        }
+
+        .qna {
+            background-color: #f7fafc;
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .q {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .a {
+            margin-top: 8px;
+            color: #4a5568;
+        }
+
+        .warn {
+            color: #c53030;
+            font-weight: 500;
+        }
+
+        .rule-list {
+            padding-left: 20px;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Codex 桌面端结合中转站 & CC Switch 使用操作文档</h1>
+
+        <div class="section">
+            <h2>一、文档说明</h2>
+            <p>本文档适用于公司员工使用Codex 桌面端，搭配中转站、CC Switch 工具，调用 GPT-5.5、Claude、Gemini、DeepSeek 等大模型（模型权限与可用状态以中转站实际上线为准，若模型下架则无法使用）。文档包含完整安装、配置、模型切换流程及常见问题解答，规范全员统一使用标准。</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <h2>二、整体使用前提</h2>
+            <p>1. 设备系统：Windows 10/11 64 位；</p>
+            <p>2. 找管理员获取 CC Switch 配置文件（密钥包）；</p>
+            <p>3. 网络环境：使用中转站服务，无需额外翻墙。</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <h2>三、分步安装与基础配置（首次使用必做）</h2>
+
+            <h3>步骤 1：下载并安装 Codex 桌面端</h3>
+            <div class="step-box">
+                <p>1. 访问指定官方下载地址，下载 Codex 桌面端安装程序；</p>
+                <p>2. 双击安装包，按照默认指引完成安装，无需修改额外配置；</p>
+                <p>3. 安装完成后，暂时不要打开运行。</p>
+            </div>
+
+            <h3>步骤 2：获取并安装 CC Switch 工具</h3>
+            <div class="step-box">
+                <p>1. 管理员已在群内发布 CC Switch 安装包，请根据自身电脑系统，安装对应版本；</p>
+                <p>2. 双击安装包，全程选择默认安装路径，完成安装并启动 CC Switch 客户端。</p>
+            </div>
+
+            <h3>步骤 3：导入分配的密钥配置包</h3>
+            <div class="step-box">
+                <p>1. 在 CC Switch 主界面，找到导入配置功能按钮；</p>
+                <p>2. 选中管理员下发的专属配置文件（.json 格式），确认导入；</p>
+                <p>3. 导入成功后，列表会显示已授权的模型通道；</p>
+                <p>4. 选中对应通道并启用，配置即时生效。</p>
+            </div>
+
+            <h3>步骤 4：启动 Codex 正常使用</h3>
+            <div class="step-box">
+                <p>完成以上三步后，双击桌面 Codex 图标启动程序，即可正常使用对应大模型开展工作。</p>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <h2>四、模型切换操作流程（GPT-5.5 / Claude / Gemini / DeepSeek 互换）</h2>
+            <div class="step-box">
+                <p>1. 最小化 / 关闭当前 Codex 程序（彻底退出，避免配置不生效）；</p>
+                <p>2. 打开后台运行的CC Switch客户端；</p>
+                <p>3. 在通道列表中，点击选中需要使用的模型通道，系统自动完成路由切换；</p>
+                <p>4. 重新启动 Codex 桌面端，软件将自动调用当前选中的模型，切换完成。</p>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <h2>五、项目文件管理规范</h2>
+            <p>所有对话记录、项目文件、代码内容全部存储在电脑本地文件夹，不会随模型、密钥切换丢失；若重装软件、更换密钥 / 模型，仅需重新导入 CC Switch 配置，原有本地项目文件、历史对话可直接正常读取，无需额外恢复操作。</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <h2>六、常见问题及解答</h2>
+
+            <h3>（一）数据安全类</h3>
+            <div class="qna">
+                <p class="q">Q1：切换 CC Switch 内的密钥、模型通道，Codex 的历史对话、项目文件会丢失吗？</p>
+                <p class="a">A：不会丢失。对话记录、项目文件、代码等数据均保存在电脑本地硬盘，切换密钥、模型仅改变大模型调用通道，不影响本地存储数据，重启 Codex 即可查看历史内容。</p>
+            </div>
+
+            <div class="qna">
+                <p class="q">Q2：使用中转站 + CC Switch 的方式，数据安全吗？存在泄密风险吗？</p>
+                <p class="a warn">A：该使用方式存在一定数据泄露风险。你提交的所有信息会先传输至中转站，再转发至官方模型服务器，流转过程中存在泄密可能。请勿上传、提交公司高度机密信息。</p>
+                <p class="a">补充说明：中转站仅负责转发模型调用请求，不主动存储员工个人对话、项目文件；数据主体留存于本地，员工离职后，管理员可在中转站后台一键禁用对应专属密钥，限制设备调用模型权限。同时禁止私自外传 CC Switch 配置文件、个人密钥，避免额度滥用与信息泄露。</p>
+            </div>
+
+            <h3>（二）使用逻辑类</h3>
+            <div class="qna">
+                <p class="q">Q4：Codex 可以直接原生使用 Claude、Gemini、DeepSeek 等模型吗？</p>
+                <p class="a">A：不可以。Codex 桌面端为 OpenAI 官方软件，底层默认适配 GPT 系列模型，无法直接接入其他第三方大模型。必须通过CC Switch + 中转站做路由转发，才能正常调用。</p>
+            </div>
+
+            <h3>（三）故障排查类</h3>
+            <div class="qna">
+                <p class="q">Q5：切换 CC Switch 模型后，Codex 无响应 / 调用报错？</p>
+                <p class="a">A：按顺序排查：彻底关闭 Codex，重新切换 CC Switch 模型通道，再重启 Codex；检查 CC Switch 对应通道是否处于 “启用” 状态，确认密钥未过期、额度未耗尽。</p>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <h2>七、补充使用规范</h2>
+            <ul class="rule-list">
+                <li>每位员工仅使用管理员分配的个人专属密钥与配置文件，禁止互相借用、转发；</li>
+                <li>CC Switch 建议保持后台常驻，不要随意关闭，避免 Codex 调用模型失败；</li>
+                <li>日常工作文件统一存放至本地分类文件夹，并开启企业云盘同步，做好双重备份；</li>
+                <li>遇到技术故障，第一时间联系管理员排查，请勿私自修改 CC Switch 接口、密钥等配置。</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
